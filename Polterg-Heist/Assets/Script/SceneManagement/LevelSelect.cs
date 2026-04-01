@@ -33,12 +33,6 @@ public class LevelSelect : BaseSceneManager
         isLoading = true;
 
         string nomNiveau = "Niveau" + niveauId;
-        print("OUVRE NIVEAU!");
-        if(AudioManagerMenu.Instance != null)
-        {
-            print("AUDIOMANAGERMENU NON NULL");
-            //AudioManagerMenu.Instance.StopMenuMusic(AudioManagerMenu.Instance.eventMusic);
-        }
         SceneManager.LoadScene(nomNiveau);
         Time.timeScale = 1f;
     }

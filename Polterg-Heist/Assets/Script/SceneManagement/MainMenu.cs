@@ -49,7 +49,6 @@ public class MainMenu : MonoBehaviour
 
     private void OnEnable()
     {
-        print("Enabled");
         isEnableFinished = false;
         Time.timeScale = 1f;
         StartCoroutine(OnEnableRelated());
