@@ -205,7 +205,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 680244824}
         m_TargetAssemblyTypeName: LevelSelect, Assembly-CSharp
-        m_MethodName: OuvreNiveaux
+        m_MethodName: OpenSelectedLevel
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -618,7 +618,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 680244824}
         m_TargetAssemblyTypeName: LevelSelect, Assembly-CSharp
-        m_MethodName: OuvreNiveaux
+        m_MethodName: OpenSelectedLevel
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1062,13 +1062,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7247adade7443154a8e4ad29da262f61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boutons:
-  - {fileID: 1793668636}
-  - {fileID: 1511929325}
-  - {fileID: 128495121}
-  - {fileID: 882211753}
-  - {fileID: 4989126}
-  - {fileID: 871107558}
   levelButtons: {fileID: 148597183}
 --- !u!114 &680244825
 MonoBehaviour:
@@ -1318,7 +1311,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 680244824}
         m_TargetAssemblyTypeName: LevelSelect, Assembly-CSharp
-        m_MethodName: OuvreNiveaux
+        m_MethodName: OpenSelectedLevel
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1472,7 +1465,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 680244824}
         m_TargetAssemblyTypeName: LevelSelect, Assembly-CSharp
-        m_MethodName: OuvreNiveaux
+        m_MethodName: OpenSelectedLevel
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2359,7 +2352,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 680244824}
         m_TargetAssemblyTypeName: LevelSelect, Assembly-CSharp
-        m_MethodName: OuvreNiveaux
+        m_MethodName: OpenSelectedLevel
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2860,7 +2853,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 680244824}
         m_TargetAssemblyTypeName: LevelSelect, Assembly-CSharp
-        m_MethodName: OuvreNiveaux
+        m_MethodName: OpenSelectedLevel
         m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

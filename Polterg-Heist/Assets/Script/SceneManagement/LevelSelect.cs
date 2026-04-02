@@ -4,39 +4,44 @@ using UnityEngine.UI;
 
 public class LevelSelect : BaseSceneManager
 {
-    public Button[] boutons;
-    public GameObject levelButtons;
+    // Manages the level selection menu
 
-    private bool isLoading = false; 
+    [SerializeField] private GameObject levelButtons; // Parent object holding all level button children
+    private Button[] boutons;
+    
+    private bool isLoading = false; // Prevents multiple clicks while loading a scene
 
     private void Awake()
     {
         ButtonsToArray();
 
-        //Gere les niveaux cliquables
+        // Get the number of unlocked levels (default = 1)
         int unlockedLevel = PlayerPrefs.GetInt("UnlockedLevel", 1);
+
+
         for (int i = 0; i < boutons.Length; i++)
         {
-            boutons[i].interactable = false;
-        }
-        for (int i = 0; i < unlockedLevel; i++)
-        {
-            boutons[i].interactable = true;
+            boutons[i].interactable = i < unlockedLevel;
         }
     }
 
-    //Load le niveau quon clique
-    public void OuvreNiveaux(int niveauId)
+    // Loads the selected level when a button is clicked
+    public void OpenSelectedLevel(int niveauId)
     {
-        //Empeche plus dun clic
+        // Prevent multiple clicks
         if (isLoading) return;
         isLoading = true;
 
         string nomNiveau = "Niveau" + niveauId;
+
+        // Load the selected level
         SceneManager.LoadScene(nomNiveau);
+
+        // Ensure the game is resume in case it was paused
         Time.timeScale = 1f;
     }
 
+    // Converts all children of levelButtons into a Button array
     void ButtonsToArray()
     {
         int childCount = levelButtons.transform.childCount;

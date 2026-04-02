@@ -4,26 +4,27 @@ using UnityEngine.UI;
 
 public class Victory : MonoBehaviour
 {
-    //Pop le UI de victoire 
+    private int numberOfLevels = 6;
+
+    // The player reached the end of the level
+    // Pause the game, unlock new level and calculate the score
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Player"))
         {  
             UnlockNewLevel();
             ScoreManager.Instance.CalculateScore();
-            Time.timeScale = 0f;
-            
-            //SceneManager.LoadScene("Victoire");
-          
+            Time.timeScale = 0f;          
         } 
     }
 
-    //Unlock un nouveau niveau 
+    //Unlock the new level if there is one
     void UnlockNewLevel()
     {
-        if (SceneManager.GetActiveScene().buildIndex >= PlayerPrefs.GetInt("ReachedIndex"))
+        int unlocked = PlayerPrefs.GetInt("UnlockedLevel", 1);
+
+        if(unlocked < numberOfLevels)
         {
-            PlayerPrefs.SetInt("ReachedIndex", SceneManager.GetActiveScene().buildIndex + 1);
             PlayerPrefs.SetInt("UnlockedLevel", PlayerPrefs.GetInt("UnlockedLevel", 1) + 1);
             PlayerPrefs.Save();
         }

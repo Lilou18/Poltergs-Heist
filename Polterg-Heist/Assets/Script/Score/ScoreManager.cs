@@ -28,8 +28,6 @@ public class ScoreManager : MonoBehaviour
         {6, new DataLevel(TimeSpan.FromMinutes(9), TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(5), 3, 2, 1)}   // Level 6 Data
     };
 
-    //public event Action<TimeSpan, int> OnShowTimer;
-    //public event Action<int, int> OnShowDeaths;
     public event Action<TimeSpan, int, int, int, int, int> OnShowScoreBoard;
 
     private void Awake()
@@ -49,15 +47,6 @@ public class ScoreManager : MonoBehaviour
         scoreUI = GetComponent<ScoreUI>();
         SetCurrentLevel();
         timer = Time.time;
-        //Debug.Log($"Niveau actuel d?tect? : {currentLevel}");
-        //CalculateScore();
-    }
-
-    private void Update()
-    {
-        //print("TEST PAUSE!!!");
-        //TimeSpan elapsedTime = TimeSpan.FromSeconds(Time.time - timer);
-        //timerTest.text = elapsedTime.ToString(@"mm\:ss");
     }
 
     public void CalculateScore()
@@ -115,7 +104,6 @@ public class ScoreManager : MonoBehaviour
     public void AddDeath()
     {
         deaths++;
-        print("DEATHS " + deaths);
     }
 
     public void GoBackLevelMenu()
