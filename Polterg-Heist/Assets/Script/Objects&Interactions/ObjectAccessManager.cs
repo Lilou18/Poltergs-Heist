@@ -12,9 +12,8 @@ public class ObjectAccessManager : InteractibleManager
     private Animator animator;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    protected override void Start()
+    protected void Start()
     {
-        base.Start();
         inventory = FindFirstObjectByType<InventorySystem>().GetComponent<InventorySystem>();
         objCollider = GetComponent<Collider2D>();
         animator = GetComponentInChildren<Animator>();
@@ -27,8 +26,6 @@ public class ObjectAccessManager : InteractibleManager
         {
             // Animation lock open up
             StartCoroutine(UnlockDoorAnimation());
-            //objCollider.isTrigger = true;
-            //InventorySystem.Instance.RemoveObject(keyItemForActivation);    // Remove the key from inventory
         }
         else
         {

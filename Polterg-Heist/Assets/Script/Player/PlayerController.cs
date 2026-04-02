@@ -17,7 +17,6 @@ public class PlayerController : MovementController
     [Header("Object possession")]
     public PossessionManager lastPossession;
 
-    // TODO FAIRE DE LA BONNE MANIÈRE!!!
     // Conditions
     [HideInInspector] public bool isPossessing; //Utilisé par PossessionBehavior pour vérifier si le Player possède un objet
     [HideInInspector] public Vector2 sizeofPlayer;
