@@ -18,7 +18,7 @@ public class Victory : MonoBehaviour
         } 
     }
 
-    //Unlock the new level if there is one
+    // Unlock the new level if there is one
     void UnlockNewLevel()
     {
         int unlocked = PlayerPrefs.GetInt("UnlockedLevel", 1);

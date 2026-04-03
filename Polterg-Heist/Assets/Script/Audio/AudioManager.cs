@@ -14,7 +14,7 @@ public class AudioManager : MonoBehaviour
     [HideInInspector] public float savedMusicVolume;
     [HideInInspector] public float savedSFXVolume;
     //[SerializeField] public AK.Wwise.Event houseMusic;
-    private List<string> menuScenes = new List<string> { "UI_Accueil", "Histoire", "LevelSelect", "Controls", "AudioSettings" };
+    private List<string> menuScenes = new List<string> { "MainMenu", "Story", "LevelSelect", "Controls", "AudioSettings" };
     private List<string> houseScenes = new List<string> { "Niveau1", "Niveau2", "Niveau3" };
     private List<string> museumScenes = new List<string> { "Niveau4", "Niveau5", "Niveau6" };
     //public AK.Wwise.State state;
@@ -130,7 +130,6 @@ public class AudioManager : MonoBehaviour
         isMusicPlaying = false;
     }
 
-
     public void SetMusicVolume(float volume)
     {
         volume_Music.SetGlobalValue(volume);
@@ -141,5 +140,20 @@ public class AudioManager : MonoBehaviour
     {
         volume_SFX.SetGlobalValue(volume);
         PlayerPrefs.SetFloat("SFXVolume", volume);
+    }
+
+    public void PauseAudio()
+    {
+        AkUnitySoundEngine.Suspend();
+    }
+
+    public void PauseAllAudio()
+    {
+        AkUnitySoundEngine.StopAll();
+    }
+
+    public void ResumeAudio()
+    {
+        AkUnitySoundEngine.WakeupFromSuspend();
     }
 }

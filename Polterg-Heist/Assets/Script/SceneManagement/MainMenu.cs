@@ -3,16 +3,16 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using System;
 
 public class MainMenu : MonoBehaviour
 {
-    //int buttonNb;
+    // Manage the Main Menu animations
+
     Animator animLogo;
     Animator animButton;
     Animator animPolterg;
-    //public float logoDelay;
-    //public float buttonDelay;
-    //public float poltergDelay;
+
 
     bool isEnableFinished;
     Image[] buttons;
@@ -24,17 +24,17 @@ public class MainMenu : MonoBehaviour
 
     private void Start()
     {
-        buttons = this.GetComponentsInChildren<Image>();
-        texts = this.GetComponentsInChildren<TextMeshProUGUI>();
+        buttons = GetComponentsInChildren<Image>();
+        texts = GetComponentsInChildren<TextMeshProUGUI>();
         transButtonColor = Vector4.one;
         transButtonColor.w = 0;
         iniTextColor = buttons[0].GetComponentInChildren<TextMeshProUGUI>().color;
         transTextColor = iniTextColor;
         transTextColor.w = 0;
 
-        animButton = this.GetComponent<Animator>();
-        animPolterg = this.transform.parent.Find("Polterg").GetComponent<Animator>();
-        animLogo = this.transform.parent.Find("Logo").GetComponent<Animator>();
+        animButton = GetComponent<Animator>();
+        animPolterg = transform.parent.Find("Polterg").GetComponent<Animator>();
+        animLogo = transform.parent.Find("Logo").GetComponent<Animator>();
         if (PlayerPrefs.GetInt("FirstTime", 0) == 0)
         {
             PlayerPrefs.SetInt("FirstTime", 1);
@@ -49,6 +49,7 @@ public class MainMenu : MonoBehaviour
 
     private void OnEnable()
     {
+        BaseSceneManager.OnGameQuit += ResetIntroAnimationFlag;
         isEnableFinished = false;
         Time.timeScale = 1f;
         StartCoroutine(OnEnableRelated());
@@ -56,6 +57,7 @@ public class MainMenu : MonoBehaviour
 
     private void OnDisable()
     {
+        BaseSceneManager.OnGameQuit -= ResetIntroAnimationFlag;
         StopAllCoroutines();
         foreach (TextMeshProUGUI txt in texts)
         {
@@ -136,41 +138,8 @@ public class MainMenu : MonoBehaviour
         if (sequence == null && isEnableFinished) { sequence = StartCoroutine(ButtonsApparition()); }
     }
 
-    public void Jouer()
-    {
-        SceneManager.LoadScene("LevelSelect");
-    }
-
-    public void Controls()
-    {
-        SceneManager.LoadScene("Controls");
-    }
-
-    public void Histoire()
-    {
-        SceneManager.LoadScene("Histoire");
-    }
-
-    public void AudioSettings()
-    {
-        SceneManager.LoadScene("AudioSettings");
-    }
-
-    public void Quit()
+    private void ResetIntroAnimationFlag()
     {
         PlayerPrefs.SetInt("FirstTime", 0);
-        Application.Quit();
-    }
-
-    public void Retour()
-    {
-        SceneManager.LoadScene("UI_Accueil");
-    }
-
-    //Load le niveau quon clique
-    public void OuvreNiveaux(int niveauId)
-    {
-        string nomNiveau = "Niveau" + niveauId;
-        SceneManager.LoadScene(nomNiveau);
     }
 }

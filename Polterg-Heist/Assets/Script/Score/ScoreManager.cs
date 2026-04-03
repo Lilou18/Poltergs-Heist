@@ -96,7 +96,7 @@ public class ScoreManager : MonoBehaviour
         else
         {
             currentLevel = 1;
-            Debug.Log("Niveau actuel ne contient pas de chiffre!!!");
+            Debug.Log("This level has no number");
         }
     }
 
@@ -104,18 +104,6 @@ public class ScoreManager : MonoBehaviour
     public void AddDeath()
     {
         deaths++;
-    }
-
-    public void GoBackLevelMenu()
-    {
-        SceneManager.LoadScene("LevelSelect");
-    }
-
-    public void GoNextLevel()
-    {
-        Scene curScene = SceneManager.GetActiveScene();
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(curScene.buildIndex + 1);
     }
 
     private class DataLevel
