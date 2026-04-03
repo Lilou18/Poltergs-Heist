@@ -3549,6 +3549,7 @@ GameObject:
   - component: {fileID: 7498480406736084273}
   - component: {fileID: 5595876885241488148}
   - component: {fileID: 7501517859941934104}
+  - component: {fileID: 2721638646851421310}
   - component: {fileID: 4599359627032484379}
   m_Layer: 5
   m_Name: NextLevel
@@ -3659,9 +3660,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 3384594651823311190}
-        m_TargetAssemblyTypeName: ScoreManager, Assembly-CSharp
-        m_MethodName: GoNextLevel
+      - m_Target: {fileID: 2721638646851421310}
+        m_TargetAssemblyTypeName: UIButtonHandler, Assembly-CSharp
+        m_MethodName: LoadNextLevel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -3671,6 +3672,19 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &2721638646851421310
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6094624978537240253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e2b9e0ef8260d349b586d0dead21231, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneName: 0
 --- !u!114 &4599359627032484379
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4474,9 +4488,10 @@ GameObject:
   - component: {fileID: 8142290439070077159}
   - component: {fileID: 5594987864900001239}
   - component: {fileID: 6402512050640251613}
+  - component: {fileID: 5843956843464520728}
   - component: {fileID: 8551031405475505587}
   m_Layer: 5
-  m_Name: Accueil
+  m_Name: LevelSelect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4584,9 +4599,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 3384594651823311190}
-        m_TargetAssemblyTypeName: ScoreManager, Assembly-CSharp
-        m_MethodName: GoBackLevelMenu
+      - m_Target: {fileID: 5843956843464520728}
+        m_TargetAssemblyTypeName: UIButtonHandler, Assembly-CSharp
+        m_MethodName: LoadScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4596,6 +4611,19 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &5843956843464520728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7586110842206077290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e2b9e0ef8260d349b586d0dead21231, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sceneName: 1
 --- !u!114 &8551031405475505587
 MonoBehaviour:
   m_ObjectHideFlags: 0
