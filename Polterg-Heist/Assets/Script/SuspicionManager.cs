@@ -68,8 +68,6 @@ public class SuspicionManager : MonoBehaviour
 
     private void Update()
     {
-        //print(currentSuspicion);
-        //UpdateSuspicion();
         if (currentSuspicion >= maxSuspicion && !hasRespawn)
         {
             // We don't want the player to be able to move anymore
@@ -138,7 +136,6 @@ public class SuspicionManager : MonoBehaviour
     // When the NPC see Polterg from a mirror or from being a exorcist he dies instantly
     public void UpdateSeeingPoltergSuspicion()
     {
-        print("100%");
         currentSuspicion = 100;
         OnSuspicionChanged?.Invoke(currentSuspicion / maxSuspicion);
     }
@@ -157,8 +154,6 @@ public class SuspicionManager : MonoBehaviour
         {
             SceneManager.LoadScene("GameOver");
         }
-        
-        //
     }
 
     // Update suspicion when an NPC notices an objet moving in front of them
@@ -179,7 +174,6 @@ public class SuspicionManager : MonoBehaviour
     // Update suspicion when an NPC notices an object has moved
     public void UpdateDisplacementSuspicion(float objectSize, float rotationChange, float positionChange)
     {
-        print("PositionChange: " + positionChange);
         float positionFactor = 1f;
         // If the object moved too much from it's initial position
         // Becomes highly suspicious
@@ -207,17 +201,13 @@ public class SuspicionManager : MonoBehaviour
         {
             rotationFactor = minRotationFactor;
         }
-
-
-        //float positionFactor = Mathf.Clamp(positionChange / maxPositionChange, 1f, 5f);
-        //float rotationFactor = Mathf.Clamp(rotationChange / maxRotationChange, 1f, 3f);
         
         float changeFactor = Mathf.Max(positionFactor, rotationFactor);
-        print("Change factor : " + changeFactor);
-        print("Current suspicion: " + currentSuspicion);
-        print("size " + (sizeFactor * objectSize));
+        //print("Change factor : " + changeFactor);
+        //print("Current suspicion: " + currentSuspicion);
+        //print("size " + (sizeFactor * objectSize));
         currentSuspicion += displacementFactor * (sizeFactor * objectSize) * changeFactor;
-        print(currentSuspicion);
+        //print(currentSuspicion);
         OnSuspicionChanged?.Invoke(currentSuspicion / maxSuspicion);    // Change the UI
         timeSinceSuspicionIncrease = Time.time;
     }
