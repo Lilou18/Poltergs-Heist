@@ -1,13 +1,13 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class JukeBox : SoundDetection, IPossessable, IResetObject, IResetInitialState
+public class Gramophone : SoundDetection, IPossessable, IResetObject, IResetInitialState
 {
     private PossessionManager possessionManager;
     private bool isPlaying;
     [SerializeField] public AK.Wwise.Event musicLooping;
 
-    Animator jukeboxAnim;
+    Animator gramophoneAnim;
 
     protected override void Start()
     {
@@ -15,7 +15,7 @@ public class JukeBox : SoundDetection, IPossessable, IResetObject, IResetInitial
         objectType = SoundEmittingObject.SoundObject;
         isPlaying = false;
         possessionManager = GetComponent<PossessionManager>();
-        jukeboxAnim = this.transform.GetChild(0).GetComponent<Animator>();
+        gramophoneAnim = this.transform.GetChild(0).GetComponent<Animator>();
     }
 
     private void PlaySoundOnRepeat()
@@ -34,7 +34,7 @@ public class JukeBox : SoundDetection, IPossessable, IResetObject, IResetInitial
     {
         if (!isPlaying)
         {
-            jukeboxAnim.SetBool("isPlaying", true);
+            gramophoneAnim.SetBool("isPlaying", true);
             PlaySoundOnRepeat();
             NotifyNearbyEnemies(this);
         }
@@ -46,7 +46,7 @@ public class JukeBox : SoundDetection, IPossessable, IResetObject, IResetInitial
         audioSource.Stop();
         musicLooping.Stop(gameObject);
         isPlaying = false;
-        jukeboxAnim.SetBool("isPlaying", false);
+        gramophoneAnim.SetBool("isPlaying", false);
     }
 
     public void ResetInitialState()

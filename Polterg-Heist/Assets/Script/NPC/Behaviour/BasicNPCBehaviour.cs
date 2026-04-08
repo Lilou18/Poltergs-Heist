@@ -152,7 +152,6 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
                             {
                                 StopNonSuspiciousSound();
                             }
-                            print(possessedObject.gameObject.name);
                             isObjectMoving = true;
                             foundMovingObject = true;
                             currentMovingObject = possessedObject.gameObject;

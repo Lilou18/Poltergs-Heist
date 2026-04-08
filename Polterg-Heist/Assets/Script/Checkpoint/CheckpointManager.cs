@@ -4,18 +4,27 @@ using UnityEngine;
 
 public class CheckpointManager : MonoBehaviour
 {
-    // Handles respawning of player and other objects
+    // Manages checkpoint saving and player/object respawning logic.
+    // Works in tandem with Checkpoint which registers itself here when activated.
 
+    [SerializeField] private bool resetAll = false;                 // If true, all BasicNPCBehaviours and Gramophones in
+                                                                    // the scene are reset on respawn, regardless of which
+                                                                    // checkpoint is active
+
+    [SerializeField] private GameObject[] resetPossessedGameObject; // Specific possessed GameObjects to reset on respawn,
+                                                                    // regardless of which checkpoint is active
     public static CheckpointManager Instance { get; private set; }  // Singleton
-    private Checkpoint currentCheckpoint;    // Current checkpoint when player dies
-    private GameObject player;
-    [SerializeField] private bool resetAll = false;
-    [SerializeField] private GameObject[] resetGameObject;
-    BasicNPCBehaviour[] allNPCs;
-    JukeBox[] allJukeBox;
-    
 
-    // Tempory getters
+    private Checkpoint currentCheckpoint;                           // The last checkpoint activated by the player
+
+    private GameObject player;                                      // Reference to the player GameObject
+
+    BasicNPCBehaviour[] allNPCs;                                    // All BasicNPCBehaviour instances in the scene
+
+    Gramophone[] allGramophone;                                     // All Gramophone instances in the scene
+
+
+    // Getter
     public Checkpoint CurrentCheckpoint { get { return currentCheckpoint; } }
     private void Awake()
     {
@@ -32,28 +41,33 @@ public class CheckpointManager : MonoBehaviour
     private void Start()
     {
         player = GameObject.FindGameObjectWithTag("Player");
+
+        // Only scan the scene for NPCs/Gramophones if a full reset is required
         if (resetAll)
         {
             StartCoroutine(FindAllNPCs());
-            StartCoroutine(FindAllJukeBox());
+            StartCoroutine(FindAllGramophone());
         }
 
     }
 
+    // Collects every BasicNPCBehaviour in the scene.
     private IEnumerator FindAllNPCs()
     {
         yield return new WaitForSeconds(0.2f);
         allNPCs = GameObject.FindObjectsByType<BasicNPCBehaviour>(FindObjectsSortMode.None);
-        print(allNPCs.Length);
     }
 
-    private IEnumerator FindAllJukeBox()
+    // Collects every Gramophone in the scene.
+    private IEnumerator FindAllGramophone()
     {
         yield return new WaitForSeconds(0.2f);
-        allJukeBox = GameObject.FindObjectsByType<JukeBox>(FindObjectsSortMode.None);
-        print(allJukeBox.Length);
+        allGramophone = GameObject.FindObjectsByType<Gramophone>(FindObjectsSortMode.None);
     }
 
+    // Resets all NPCs and Gramophone in the scene to their initial state.
+    // Only runs if resetAll is enabled in the inspector.
+    // Complements the targeted reset done on the current checkpoint's object list.
     private void ResetAll()
     {
         if (resetAll)
@@ -63,45 +77,50 @@ public class CheckpointManager : MonoBehaviour
                 npc.ResetInitialState();
             }
 
-            foreach (JukeBox box in allJukeBox)
+            foreach (Gramophone gramophone in allGramophone)
             {
-                box.ResetInitialState();
+                gramophone.ResetInitialState();
             }
         }
     }
 
-    private void ResetObjects()
+    // Resets every GameObject listed in resetPossessedGameObject.
+    // This targets objects that are not children of any checkpoint's parent transform
+    // and therefore not picked up by Checkpoint.FindAllResetObjects.
+    private void ResetPossessedObjects()
     {
-        print("RESETOBJECTS");
-        if (resetGameObject != null)
+        if (resetPossessedGameObject != null)
         {
-            foreach (GameObject go in resetGameObject)
+            foreach (GameObject go in resetPossessedGameObject)
             {
                 PossessionManager posssessManager = go.GetComponentInChildren<PossessionManager>();
                 if (posssessManager != null)
                 {
-                    print("TESTING RESET" +  go.name);
-                    //posssessManager.StopPossession();
                     posssessManager.ResetInitialState();
                 }
             }
         }
     }
 
+    // Registers a checkpoint as the current active one.
     public void SetCheckPoint(Checkpoint newCheckpoint)
     {
         currentCheckpoint = newCheckpoint;
     }
 
+    // Triggers the full respawn sequence if a checkpoint has been registered.
+    // Called externally when the player dies by SuspicionManager.
     public void Respawn()
     {
         if(currentCheckpoint != null)
         {
-            print("I HAVE A CHECKPOINT");
             StartCoroutine(WaitBeforeReset());
         }
     }
 
+
+    // Resets the suspicion state of every HumanNPCBehaviour in the scene.
+    // Called after respawn so enemies no longer remember spotting the player.
     private void ResetEnemies()
     {
         HumanNPCBehaviour[] listNPC = GameObject.FindObjectsByType<HumanNPCBehaviour>(FindObjectsSortMode.None);
@@ -110,33 +129,29 @@ public class CheckpointManager : MonoBehaviour
         }
     }
 
-    // Reset every game object associated with the checkpoint
-    // Reset the player and the enemies suspicion
+    // Reset every GameObject associated with the checkpoint
+    // Reset possessed objects from resetPossessedGameObject
+    // Resets enemy suspicion and, optionally, all scene NPCs/Gramophones.
+    // Teleports the player to the checkpoint position and re-enables movement.
     private IEnumerator WaitBeforeReset()
     {
-        //print("RESET");
+        // Short delay to let any death animation / effect finish.
         yield return new WaitForSeconds(0.1f);
-        //yield return StartCoroutine(ResetInitialStateGameObjects());
 
+        // Reset every IResetInitialState object linked to the active checkpoint
         foreach (IResetInitialState resetGameObject in currentCheckpoint.ResetGameObjects)
         {
 
-            MonoBehaviour component = resetGameObject as MonoBehaviour; // Cast en MonoBehaviour
+            MonoBehaviour component = resetGameObject as MonoBehaviour;
             if (component != null && component.gameObject.activeInHierarchy)
             {
-                print(component.gameObject.name);
                 resetGameObject.ResetInitialState();    // Reset the game object to it's initial state
 
             }
-
-            //else
-            //{
-            //    print(component.gameObject.name);
-            //}
-
         }
-        ResetObjects();
-        //yield return null;
+        ResetPossessedObjects();
+
+        // Teleport the player to the checkpoint and restore movement
         if (player != null)
         {
             player.transform.position = currentCheckpoint.transform.position;
@@ -145,32 +160,7 @@ public class CheckpointManager : MonoBehaviour
 
 
         ResetEnemies();
-        ResetAll();
+        ResetAll();     // Only if resetAll is enable
         SuspicionManager.Instance.ResetSuspicion();
     }
-
-    // Reset every game object associated with the checkpoint
-    private IEnumerator ResetInitialStateGameObjects()
-    {
-        foreach (IResetInitialState resetGameObject in currentCheckpoint.ResetGameObjects)
-        {
-
-            MonoBehaviour component = resetGameObject as MonoBehaviour; // Cast en MonoBehaviour
-            if (component != null && component.gameObject.activeInHierarchy)
-            {
-                print(component.gameObject.name);
-                resetGameObject.ResetInitialState();    // Reset the game object to it's initial state
-
-            }
-
-            //else
-            //{
-            //    print(component.gameObject.name);
-            //}
-
-        }
-        yield return null;
-    }
-
-
 }
