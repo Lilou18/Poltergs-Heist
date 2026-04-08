@@ -1,33 +1,41 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class ScoreManager : MonoBehaviour
 {
-    public static ScoreManager Instance { get; private set; }
-    ScoreUI scoreUI;
+    //Tracks the player's performance during a level (time, deaths, collected items)
+    // and calculates a star rating for each category when the level ends.
 
-    private int deaths = 0;
-    private float timer;
-    private int collectedItems = 0;
 
-    private int currentLevel = 1;
 
-    // Preset data to calculate score on each level
+    public static ScoreManager Instance { get; private set; }   // Singleton
+    ScoreUI scoreUI;                                            // Reference to the UI component that displays the scoreboard
+
+    // Tracked Stats
+    private int deaths = 0;                                     // Total number of times the player has died in this level
+    private float timer;                                        // Time spent to finish the level
+    private int collectedItems = 0;                             // Number of items collected by the player
+
+    private int currentLevel = 1;                               // Index of the current level, parsed from the scene name
+
+    // Star thresholds for each level, keyed by level index.
+    // Each entry defines the time and death count required to earn 1, 2, or 3 stars for their specific category.
     private readonly Dictionary<int, DataLevel> levelCriteria = new Dictionary<int, DataLevel>()
     {
         //                                     1S                       2S                       3S  1S 2S 3S
         {1, new DataLevel(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(3), TimeSpan.FromMinutes(2), 3, 2, 1)},  // Level 1 Data
         {2, new DataLevel(TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(6), TimeSpan.FromMinutes(4), 3, 2, 1)},  // Level 2 Data
-        {3, new DataLevel(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(4), 3, 2, 1)},  // Level 3 Data
+        {3, new DataLevel(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(4), 3, 2, 1)}, // Level 3 Data
         {4, new DataLevel(TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(3), 3, 2, 1)},  // Level 4 Data
-        {5, new DataLevel(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(5), 3, 2, 1)},  // Level 5 Data
+        {5, new DataLevel(TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(5), 3, 2, 1)}, // Level 5 Data
         {6, new DataLevel(TimeSpan.FromMinutes(9), TimeSpan.FromMinutes(7), TimeSpan.FromMinutes(5), 3, 2, 1)}   // Level 6 Data
     };
 
+    // Fired when the score is ready to be displayed.
+    // Parameters: elapsed time, time stars, death count, death stars, collected items, item stars.
     public event Action<TimeSpan, int, int, int, int, int> OnShowScoreBoard;
 
     private void Awake()
@@ -46,9 +54,11 @@ public class ScoreManager : MonoBehaviour
     {
         scoreUI = GetComponent<ScoreUI>();
         SetCurrentLevel();
-        timer = Time.time;
+        timer = Time.time;  // Start the level timer
     }
 
+    // Called when the player completes the level.
+    // Computes elapsed time and star ratings for each category, and then call the event to display the UI.
     public void CalculateScore()
     {
         scoreUI.ShowScorePanel();
@@ -68,12 +78,16 @@ public class ScoreManager : MonoBehaviour
         timeStars = CalculateStars(elapsedTime, dataLevel.time1Star, dataLevel.time2Star, dataLevel.time3Star);
         deathsStars = CalculateStars(deaths, dataLevel.death1Star, dataLevel.death2Star, dataLevel.death3Star);
 
+        // Collected items count directly as stars (1 item = 1 star, capped at 3)
         collectedItems = InventorySystem.Instance.StolenItemList.Count;
         collectedItemStars = collectedItems;
         OnShowScoreBoard?.Invoke(elapsedTime, timeStars, deaths, deathsStars, collectedItems, collectedItemStars);
 
     }
 
+    // Generic star calculator: compares a value against three thresholds and returns 0–3 stars.
+    // Works for comparable type such has time and deaths.
+    // If the value is lower then the 3 star threshold, returns 3 stars.
     private int CalculateStars<T>(T value, T oneStarThreshold, T twoStarThreshold, T threeStarThreshold) where T : IComparable<T>
     {
         // Compare value to the thresholds
@@ -83,7 +97,7 @@ public class ScoreManager : MonoBehaviour
         return 0;
     }
 
-
+    // Extracts the level number from the active scene name.
     private void SetCurrentLevel()
     {
         string sceneName = SceneManager.GetActiveScene().name;
@@ -100,12 +114,14 @@ public class ScoreManager : MonoBehaviour
         }
     }
 
-    // Count the number of deaths of the player
+    // Increments the death counter. Called by SuspicionManager when the player dies.
     public void AddDeath()
     {
         deaths++;
     }
 
+    // Inner Class
+    // Holds the star thresholds for a single level.
     private class DataLevel
     {
         public TimeSpan time1Star, time2Star, time3Star;

@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class ButtonSound : MonoBehaviour, IPointerEnterHandler, IPointerClickHandler
 {
+    // This class manage the sound made by the buttons when we hover and click on them
+
     [Header("Sound variables")]
     [SerializeField] protected AK.Wwise.Event mouseHoverSoundEvent;
     [SerializeField] protected AK.Wwise.Event onClickSoundEvent;
@@ -21,9 +23,7 @@ public class ButtonSound : MonoBehaviour, IPointerEnterHandler, IPointerClickHan
             onClickSoundEvent.Post(gameObject);
         }
 
-    }
-
-    // This class manage the sound made by the buttons when we hover and click on them
+    }   
 
     public void OnPointerEnter(PointerEventData eventData)
     {

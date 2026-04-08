@@ -53,10 +53,4 @@ public class Gramophone : SoundDetection, IPossessable, IResetObject, IResetInit
     {
         ResetObject();
     }
-
-    //public void StopSound()
-    //{
-    //    audioSource.Stop();
-    //    isPlaying = false;
-    //}
 }

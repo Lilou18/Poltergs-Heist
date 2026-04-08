@@ -1,55 +1,60 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
 public class ScoreUI : MonoBehaviour
 {
-    // This class manage the UI for the Score
-    [Header ("ScoreBoard UI Gameobjects")]
-    [SerializeField] Canvas canvasScore;
-    [SerializeField] GameObject scorePanel;
-    [SerializeField] GameObject timerGroup;
-    [SerializeField] GameObject deathsGroup;
-    [SerializeField] GameObject collectedItemGroup;
-    [SerializeField] TMP_Text numberOfDeathsTxt;
-    [SerializeField] TMP_Text numberOfTimeTxt;
-    [SerializeField] TMP_Text collectedItemTxt;
-    [SerializeField] GameObject[] starsImageTimer;
-    [SerializeField] GameObject[] starsImageDeaths;
-    [SerializeField] GameObject[] starsImageItemCollected;
+    // Handles the UI for the scoreboard
 
+    [Header ("ScoreBoard UI Gameobjects")]
+    [SerializeField] Canvas canvasScore;                            // Canvas containing the entire score screen, enabled when the level ends
+    [SerializeField] GameObject scorePanel;                         // GameObject containing all score UI elements
+
+    [SerializeField] GameObject timerGroup;                         // UI group for the time stat text
+    [SerializeField] GameObject deathsGroup;                        // UI group for the death count stat text
+    [SerializeField] GameObject collectedItemGroup;                 // UI group for the collected items stat text
+
+    [SerializeField] TMP_Text numberOfDeathsTxt;                    // UI text displaying the death count value
+    [SerializeField] TMP_Text numberOfTimeTxt;                      // UI text displaying the elapsed time value
+    [SerializeField] TMP_Text collectedItemTxt;                     // UI text displaying the collected items count value
+
+    [SerializeField] GameObject[] starsImageTimer;                  // Star icons for the time category
+    [SerializeField] GameObject[] starsImageDeaths;                 // Star icons for the deaths category
+    [SerializeField] GameObject[] starsImageItemCollected;          // Star icons for the collected items category
+
+    // Sound Event
     [Header ("Sound Variables")]
-    [SerializeField] protected AK.Wwise.Event victorySoundEvent;
+    [SerializeField] protected AK.Wwise.Event victorySoundEvent;    // Music when the level is finished
     [SerializeField] protected AK.Wwise.Event winSoundEvent;
-    [SerializeField] protected AK.Wwise.Event statsSoundEvent;
-    [SerializeField] protected AK.Wwise.Event[] startSoundEvent;
+    [SerializeField] protected AK.Wwise.Event statsSoundEvent;      // Sound Event fired when stats are revealed
+    [SerializeField] protected AK.Wwise.Event[] startSoundEvent;    // Sound Event fired when each star appears
     void Start()
     {
+        // Subscribe to the score event so the UI updates automatically when the level ends
         ScoreManager.Instance.OnShowScoreBoard += ShowScoreBoard;
     }
 
-    // Display Score Panel
+    // Enables the score canvas and plays victory sounds.
     public void ShowScorePanel()
     {
         canvasScore.enabled = true;
-        //AudioManager.Instance.StopMenuMusic();
         AkUnitySoundEngine.StopAll();
         winSoundEvent.Post(gameObject);
         victorySoundEvent.Post(gameObject);
-        ///scorePanel.SetActive(true);
     }
 
-    // Display ScoreBoard
+    // Display the scoreBoard.
+    // Delegates to the coroutine so each stat can be revealed with delays.
     private void ShowScoreBoard(TimeSpan time, int numberStarsTime, int numberDeaths, int numberStarsDeaths, int collectedItems, int numberStarsItems)
     {
         StartCoroutine(ShowScoreBoardCoroutine(time, numberStarsTime, numberDeaths, numberStarsDeaths, collectedItems, numberStarsItems));
     }
 
-    // Mange ScoreBoard Animation and display
+    // Manage the ScoreBoard Animation and display.
     private IEnumerator ShowScoreBoardCoroutine(TimeSpan time, int numberStarsTime, int numberDeaths, int numberStarsDeaths, int collectedItems, int numberStarsItems)
     {
+        // Wait for the level-end animation to finish
         yield return new WaitForSecondsRealtime(1.5f);
 
 
@@ -66,7 +71,7 @@ public class ScoreUI : MonoBehaviour
         yield return (StartCoroutine(ShowStars(numberStarsItems, starsImageItemCollected)));
     }
 
-    // Show the right amount of stars
+    // Reveals the right amount of stars one at a time, handles their animation and sound event.
     private IEnumerator ShowStars(int numberStars, GameObject[] starsUI)
     {
         if(numberStars > 3)
@@ -76,14 +81,14 @@ public class ScoreUI : MonoBehaviour
 
         for(int i = 0; i < numberStars; i++)
         {
-            //starsUI[i].gameObject.SetActive(true);
             starsUI[i].GetComponent<Animator>().SetBool("ShowStar", true);
+            // Reveal sound event
             startSoundEvent[i].Post(gameObject);
             yield return new WaitForSecondsRealtime(0.5f);
         }
     }
 
-    // Manage animation text
+    // Manage text animation and stat sound event.
     private IEnumerator ShowText(GameObject text)
     {
         text.GetComponent<Animator>().SetBool("ShowText", true);
@@ -93,6 +98,7 @@ public class ScoreUI : MonoBehaviour
 
     private void OnDisable()
     {
+        // Unsubscribe to prevent calls on a disabled/destroyed object
         ScoreManager.Instance.OnShowScoreBoard -= ShowScoreBoard;
     }
 }
