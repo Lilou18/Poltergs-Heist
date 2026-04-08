@@ -67,9 +67,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
         UpdateIconDisplay();
 
-        
-
-        // DetectMovingObjects();
         CheckMirrorReflection();
 
         if (npcSpriteRenderer == null)
@@ -78,12 +75,10 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         }
 
         if (investigationQueue.Count > 0 && !isInvestigating)
-        {
-            //nonSuspiciousSoundEvent.Stop(gameObject);
+        {            
             if (returnToInitialPositionCoroutine != null)
             {
-                StopCoroutine(returnToInitialPositionCoroutine);
-                //StopAllCoroutines();
+                StopCoroutine(returnToInitialPositionCoroutine);                
                 returnToInitialPositionCoroutine = null;
             }
 
@@ -103,13 +98,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         {
             StopNonSuspiciousSound();
         }
-        // REMOVE HERE!!!
-        // If investigation ended and nothing else is happening, start ambient sound
-        //else if (!isInvestigating && investigationQueue.Count == 0 && !seePolterg && !isNonSuspiciousSoundPlaying && nonSuspiciousSoundCoroutine == null)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-
     }
 
     protected virtual void UpdateIconDisplay()
@@ -136,8 +124,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
             fovLight.color = alertColorFOV;
             alertSpriteRenderer.enabled = true;
         }
-        //print("ACTIVE" + hasActiveInvestigation);
-
 
         if(hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion <= 0)
         {
@@ -150,30 +136,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
                 alertSpriteRenderer.enabled = true;
             }
         }
-        //if (hasSeenMovement && alertSpriteRenderer != null)
-        //{
-        //    if (SuspicionManager.Instance.HasSuspicionDecrease)
-        //    {
-        //        alertSpriteRenderer.enabled = false;
-        //        //print("already here");
-        //    }
-
-        //    if (SuspicionManager.Instance.CurrentSuspicion <= 0)
-        //    {
-        //        hasSeenMovement = false;
-        //    }
-        //    // Keep alert icon visible while suspicion exists, hide it when suspicion is gone
-        //    //if (SuspicionManager.Instance.CurrentSuspicion > 0)
-        //    //{
-        //    //    alertIcon.enabled = true;
-        //    //}
-        //    //else
-        //    //{
-        //    //    alertIcon.enabled = false;
-        //    //    hasSeenMovement = false; // Reset the flag when suspicion is gone
-        //    //}
-        //}
-
     }
     protected override bool CanPlayNonSuspiciousSound()
     {
@@ -224,12 +186,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         else if (!isObjectMoving && isCurrentlyObserving)
         {
             isCurrentlyObserving = false;
-
-            //if (alertSpriteRenderer != null && hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0)
-            //{
-            //    alertSpriteRenderer.sprite = alertIcon;
-            //    alertSpriteRenderer.enabled = true;
-            //}
             SuspicionManager.Instance.RemoveParanormalObserver();
         }
         // If the object is still moving
@@ -250,30 +206,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
             return IsPointInFieldOfView(colliderPoints, obj);
         }
         return false;
-       
-        //foreach (Vector2 point in colliderPoints)
-        //{
-        //    // Check if the object is in the line of sight of the NPC
-        //    Vector2 directionToPoint = (point - (Vector2)transform.position).normalized;
-        //    float angle = Vector2.Angle(facingRight ? Vector2.right : Vector2.left, directionToPoint);
-
-        //    // If the object is not within view angle, return false immediately
-        //    if (angle > fieldOfViewAngle / 2)
-        //    {
-        //        continue;
-        //    }
-
-        //    // Check if there is light toutching the object
-        //    if (!IsObjectLit(obj))
-        //    {
-        //        continue;
-        //    }
-
-        //    // Object is in field of view and area is sufficiently lit
-        //    return true;
-        //}
-        //return false;
-
     }
 
     // Verifiy if the object is toutched by a light
@@ -295,8 +227,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         foreach (Vector2 point in colliderPoints)
         {
-
-
             // Check if the object is in the line of sight of the NPC
             Vector2 directionToPoint = (point - (Vector2)transform.position).normalized;
             float angle = Vector2.Angle(facingRight ? Vector2.right : Vector2.left, directionToPoint);
@@ -349,15 +279,11 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
             // Check if the player reflection is in the mirror
             if (mirror.IsReflectedInMirror(player.GetComponent<Collider2D>()))
             {
-                //print("player in reflection");
                 Collider2D playerCollider = player.GetComponent<Collider2D>();
                 Vector2[] reflectionPoints = mirror.GetReflectionPoints(playerCollider);
-                //print(reflectionPoints[0]);
-                //print(reflectionPoints.Length);
-                //print("Is reflected in mirror");
+
                 if (IsPointInFieldOfView(reflectionPoints, playerCollider))
                 {
-                    //print("In field of view");
                     // If nothing is blocking the sight of the NPC to the reflection of the player
                     if (!mirror.IsMirrorReflectionBlocked(reflectionPoints, playerCollider) && !seePolterg)
                     {
@@ -365,16 +291,8 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
                         {
                             StopNonSuspiciousSound();
                         }
-                        //StartCoroutine(WaitBeforeNonSuspiciousSound());
-                        //nonSuspiciousSoundEvent.Stop(gameObject);
-                        print("see");
                         playerCollider.gameObject.GetComponent<MovementController>().canMove = false;
                         NPCSeePolterg();
-                    }
-                    else
-                    {
-                        //print("BLOCKED!");
-
                     }
                 } 
 
@@ -417,19 +335,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         }
 
         investigationQueue.Enqueue(InvestigateSoundObject(objectsound, replaceObject, targetFloor));
-        //switch (objectsound.ObjectType)
-        //{
-        //    case SoundEmittingObject.FallingObject:
-        //        investigationQueue.Enqueue(InvestigateFallingObject((FallingObject)objectsound, replaceObject, targetFloor));
-        //        break;
-        //    case SoundEmittingObject.SoundObject:
-        //        investigationQueue.Enqueue(InvestigateSoundObject((JukeBox)objectsound,replaceObject, targetFloor));
-        //        break;
-        //    default:
-        //        Debug.Log("Sound emitting object unknown");
-        //        break;
-        //}
-
     }
 
     public void EnqueueInvestigation(IEnumerator investigation)
@@ -464,8 +369,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
                 fovLight.color = nonSuspiciousColorFOV;
             }
         }
-        //print(investigationQueue.Count);
-        //print("HASSEENMOVEMENT" + hasSeenMovement);
+
         isInvestigating = false;
         currentInvestigation = null;
 
@@ -487,7 +391,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         npcMovementController.Reset();
         yield return new WaitForSeconds(surpriseWaitTime);
 
-        //npcAnim.SetBool("InMovement", false);
         yield return (npcMovementController.ReachTarget(objectsound.transform.position, currentFloorLevel, targetFloor));
 
         // We can't find a path
@@ -521,20 +424,11 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         yield return StartCoroutine(npcMovementController.ReachTarget(initialPosition, currentFloorLevel, initialFloorLevel));//ReachTarget(initialPosition, initialFloorLevel));
 
         // Restore initial facing direction
-        //if(npcSpriteRenderer.flipX == initialFacingRight)
-        //{
-        //    npcSpriteRenderer.flipX = !initialFacingRight;
-        //    facingRight = false;
-        //    FlipFieldOfView();
-        //}
-        print("IM I FACING RIGHT? " + facingRight);
-        print("INITIAL FACING RIGHT" + initialFacingRight);
         if (facingRight != initialFacingRight)
         {
             facingRight = initialFacingRight;
             FlipFieldOfView();
         }
-        //StopNonSuspiciousSound();
     }
 
     public override void ResetInitialState()
@@ -564,7 +458,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         npcAnimMouth.SetBool("IsSurprised", false);
         npcMovementController.Reset();
         fovLight.color = nonSuspiciousColorFOV;
-        //print("INMOVEMENTFALSE!!!");
     }
 
     public void ResetSeePolterg()

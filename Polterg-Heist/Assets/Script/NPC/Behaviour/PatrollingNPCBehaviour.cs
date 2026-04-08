@@ -42,15 +42,9 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         base.Start();
         indexPatrolPoints = 0;
         animator = GetComponentInChildren<Animator>();
-        //if(animator != null)
-        //{
-        //    print("Nom de l'animator" + animator.gameObject.name);
-        //}
         isBlocked = false;
         isWaiting = false;
         isInRoom = false;
-        //rightFloor = true;
-        //isWalkingBack = false;
         isPatrolling = false;   
         currentPoint = null;
         if(patrolPoints.Length > 0)
@@ -70,35 +64,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         UpdateIconDisplay();
 
         DetectMovingObjects();
-
-        //if (hasSeenMovement && alertSpriteRenderer != null)
-        //{
-        //    if (SuspicionManager.Instance.HasSuspicionDecrease)
-        //    {
-        //        alertSpriteRenderer.enabled = false;
-        //        print("already here");
-        //    }
-
-        //    if (SuspicionManager.Instance.CurrentSuspicion <= 0)
-        //    {
-        //        hasSeenMovement = false;
-        //    }
-
-        //}
-        //if (hasSeenMovement && alertIcon != null)
-        //{
-        //    // Keep alert icon visible while suspicion exists, hide it when suspicion is gone
-        //    if (SuspicionManager.Instance.CurrentSuspicion > 0)
-        //    {
-        //        alertIcon.enabled = true;
-        //    }
-        //    else
-        //    {
-        //        alertIcon.enabled = false;
-        //        hasSeenMovement = false; // Reset the flag when suspicion is gone
-        //    }
-        //}
-
         CheckMirrorReflection();
 
 
@@ -120,8 +85,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
                 returnToFloor = null;
             }
             isInvestigating = true;
-            //StopCoroutine("HandleWaiting");
-            //StopCoroutine("Patrol");
+
             if(patrolling != null)
             {
                 StopCoroutine(patrolling);
@@ -131,12 +95,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             IEnumerator investigationCoroutine = investigationQueue.Dequeue();
             StartCoroutine(RunInvestigation(investigationCoroutine));
         }
-        // Priority 3: Return to starting floor if we need to
-        //else if(investigationQueue.Count == 0 && !isInvestigating && !rightFloor && isWalkingBack)
-        //{
-        //    isWalkingBack = false;
-        //    returnToFloor = StartCoroutine(ReturnRightFloor());
-        //}
         // Priority 4: Patrol if we're able to and should be
         else if(investigationQueue.Count == 0 && !isInvestigating && !isWaiting && !isBlocked && !isPatrolling)
         {
@@ -146,7 +104,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
 
 
         // Handle ambient sound for patrolling NPCs
-        //bool shouldPlayAmbientSound = CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying && nonSuspiciousSoundCoroutine == null;
         bool shouldStopAmbientSound = (!CanPlayNonSuspiciousSound() || isInvestigating || investigationQueue.Count > 0) && isNonSuspiciousSoundPlaying;
 
         // Stop the sound if conditions require it
@@ -154,12 +111,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         {
             StopNonSuspiciousSound();
         }
-        // Start the sound if conditions allow it and we're not already playing/about to play
-        //else if (shouldPlayAmbientSound)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-
     }
 
     protected override void UpdateIconDisplay()
@@ -181,7 +132,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
     {
         bool baseConditions =  base.CanPlayNonSuspiciousSound();
 
-        return baseConditions && !isBlocked; // !isWaiting && !isInRoom
+        return baseConditions && !isBlocked;
     }
 
     protected override IEnumerator RunInvestigation(IEnumerator investigation)
@@ -192,9 +143,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         {
             yield return new WaitForSeconds(0.5f);
         }
-        //isWalkingBack = true;
-        //rightFloor = false;
-        print(investigation.ToString());
+
         yield return StartCoroutine(investigation);
         isInvestigating = false;
 
@@ -218,12 +167,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         }
     }
 
-    // Start the investigation of the sound
-    //public override void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
-    //{
-    //    investigationQueue.Enqueue(InvestigateFallingObject(objectsound, replaceObject, targetFloor));      
-    //}
-
     public IEnumerator ReturnRightFloor()
     {
         yield return StartCoroutine(npcMovementController.ReachFloor(currentFloorLevel, initialFloorLevel));//ReachFloor(initialFloorLevel));
@@ -242,8 +185,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         Vector2 destination = new Vector2(nextPatrolPoint.Point.position.x, transform.position.y);
 
         currentPoint = null;
-        //print("CURRENTFLOOR" + currentFloorLevel);
-        //print("NEXTPOINT " + nextPatrolPoint.FloorLevel);
+
         yield return npcMovementController.ReachTarget(destination, currentFloorLevel, nextPatrolPoint.FloorLevel);
 
         // NPC has arrived to the patrol point
@@ -298,7 +240,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
     public void MoveToNextAvailablePatrolPoint()
     {
         int patrolPointPossibilities = patrolPoints.Length;
-        //bool findNextPoint = false;
+
         indexPatrolPoints++;
         if (indexPatrolPoints >= patrolPoints.Length)
         {
@@ -342,11 +284,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
                     // The NPC is stuck
                     StopNonSuspiciousSound();
                     uint playingID = npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
-                    //Animator roomAnimator = currentPoint.GetComponent<Animator>();
-                    //if(roomAnimator != null)
-                    //{
-                    //    roomAnimator.SetBool("IsNPCBlocked", true);
-                    //}
                     isWaiting = false;
                     isBlocked = true;
                     yield break;
@@ -362,11 +299,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             {
                 StopNonSuspiciousSound();
                 uint playingID = npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
-                //Animator roomAnimator = currentPoint.GetComponent<Animator>();
-                //if (roomAnimator != null)
-                //{
-                //    roomAnimator.SetBool("IsNPCBlocked", true);
-                //}
+
                 // The NPC is stuck
                 isWaiting = false;
                 isBlocked = true;
@@ -375,16 +308,11 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         }
         else
         {
-            //isWaiting = false;
             yield return new WaitForSeconds(currentPoint.WaitTime);
         }
         isWaiting = false;
         isPatrolling = false;
 
-        //if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
         MoveToNextAvailablePatrolPoint();
     }
 
@@ -393,7 +321,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         if (in_type == AkCallbackType.AK_Marker)
         {
             AkMarkerCallbackInfo markerInfo = (AkMarkerCallbackInfo)in_info;
-            //Debug.Log("Marker Triggered: " + markerInfo.strLabel);
 
             // Ici tu déclenches ton animation
             Animator roomAnimator = currentPoint.GetComponent<Animator>();
@@ -409,7 +336,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
     // NPC is not blocked anymore
     protected IEnumerator GetUnstuck()
     {
-        //isGettingUnstuck = true;
         // Animation of NPC coming out of the room
         isWaiting = true;
         isBlocked = false;
@@ -422,16 +348,14 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         fovLight.enabled = true;
         animator.SetBool("EnterRoom", false);
         isWaiting = false;
-        //print("ISWAITING2 " + isWaiting); 
         isInRoom = false;
         isPatrolling = false;
 
-        if (CanPlayNonSuspiciousSound()) //&& !isNonSuspiciousSoundPlaying)
+        if (CanPlayNonSuspiciousSound())
         {
             StartNonSuspiciousSound();
         }
         // After getting unstuck, move to the next patrol point
-        //isGettingUnstuck = false;
         MoveToNextAvailablePatrolPoint();
     }
 
@@ -461,23 +385,5 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         npcLockedSoundEvent.Stop(gameObject);
 
         fovLight.color = nonSuspiciousColorFOV;
-        // Stop room animation
-        //foreach(PatrolPointData patrolPoint in patrolPoints)
-        //{
-        //    if (patrolPoint.PatrolPointType == PatrolPointType.Room && patrolPoint.SpriteRenderer != null)
-        //    {
-        //        Animator roomAnimator = currentPoint.GetComponent<Animator>();
-        //        if (roomAnimator != null)
-        //        {
-        //            roomAnimator.SetBool("IsNPCBlocked", false);
-        //        }
-        //    }
-        //}
-
-        //if (CanPlayNonSuspiciousSound())
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-        //cageAnimator.Play("Idle", -1, 0f);
     }
 }

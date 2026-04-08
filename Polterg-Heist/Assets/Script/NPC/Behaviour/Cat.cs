@@ -36,7 +36,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
 
     GameObject cage;    // Cage the cat is trapped in
 
-    //public AK.Wwise.Event soundEvent;
     protected override void Start()
     {
         base.Start();
@@ -48,7 +47,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
         canMove = true;
         isPatrolling = false;
 
-        //initialFOVRotation = fovLight.transform.rotation;
         audioSource = GetComponent<AudioSource>();
         catCollider = GetComponent<Collider2D>();
         catAnim = GetComponentInChildren<Animator>();
@@ -216,12 +214,9 @@ public class Cat : BasicNPCBehaviour, IPatrol
                     {
                         if (faceRight != FacingRight)
                         {
-                            //npcSpriteRenderer.flipX = !faceRight;
                             FacingRight = faceRight;
                             FlipFieldOfView();
                         }
-                        //npcSpriteRenderer.flipX = objectDirection.x < 0;
-                        //facingRight = !npcSpriteRenderer.flipX;
                     }
                 }
             }
@@ -234,19 +229,13 @@ public class Cat : BasicNPCBehaviour, IPatrol
 
                 // Flip sprite based on direction
                 if (faceRight != FacingRight)
-                {
-                    //npcSpriteRenderer.flipX = !faceRight;
+                {                   
                     FacingRight = faceRight;
                     FlipFieldOfView();
                 }
-
-                // Flip sprite based on direction
-                //npcSpriteRenderer.flipX = direction.x < 0;
-                //facingRight = !npcSpriteRenderer.flipX;
             }
 
-            // Cat is running towards the object target
-            //transform.position = Vector2.MoveTowards(transform.position, destination, huntingSpeed * Time.deltaTime);
+            // Cat is running towards the object target            
             transform.position = new Vector3(transform.position.x, transform.position.y, objectPosition.z);
 
             Vector3 moveDestination = new Vector3(objectPosition.x, transform.position.y, objectPosition.z);
@@ -266,13 +255,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
                 yield return AttackObject();
                 break;
             }
-
-            //if (catCollider.bounds.Intersects(targetPossessedObject.GetComponent<Collider2D>().bounds))
-            //{
-            //    isHunting = false;
-            //    yield return AttackObject();
-            //    break;
-            //}
             yield return null;
         }
         
@@ -283,7 +265,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
     {
         isAttacking = true;
         audioSource.Play();
-        //surpriseSoundEvent.Post(gameObject);
+        
         catSlapEvent.Post(gameObject);
         catAnim.SetBool("IsAttacking", true);
 
@@ -326,9 +308,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
         {
             
             if(collision.bounds.Contains(catCollider.bounds.min) && collision.bounds.Contains(catCollider.bounds.max))
-            {
-                //audioSource.Play();
-
+            {           
                 surpriseSoundEvent.Post(gameObject);
                 canMove = false;
                 StopAllCoroutines();

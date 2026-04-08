@@ -70,7 +70,7 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
         isObjectMoving = false;
 
         npcSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        //npcSpriteRenderer = GetComponent<SpriteRenderer>();
+
         npcMovementController = GetComponent<NPCMovementController>();
         if (TryGetComponent<Cat>(out Cat cat)) { npcAnim = GetComponentInChildren<Animator>(); }
         else 
@@ -79,14 +79,13 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
             npcAnimMouth = npcAnim.transform.GetChild(0).GetComponentInChildren<Animator>();
 
         }
-        //print(this.gameObject.name);
-        //print("ANIM" + npcAnim.gameObject.name);
+
         fieldOfView = transform.GetChild(0).gameObject;
         fovLight = GetComponentInChildren<Light2D>();
 
         initialPosition = transform.position;
         initialRotation = transform.rotation;
-        initialFacingRight = facingRight;//!npcSpriteRenderer.flipX;
+        initialFacingRight = facingRight;
         initialFloorLevel = currentFloorLevel;
         directionX = 0;
 
@@ -120,8 +119,7 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
             if(obj == null) continue;
 
             if (this.IsObjectInFieldOfView(obj))
-            {
-                //print("NOM DE L'OBJET " + obj.gameObject.name);
+            {                
                 // Check if there is no object blocking the sight of the NPC
                 RaycastHit2D hit = Physics2D.Raycast(transform.position, (obj.transform.position - transform.position).normalized, detectionRadius, ~ignoreLayerSightBlocked);
 
@@ -129,13 +127,10 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
                 if (hit.collider != null && hit.collider == obj)
                 {
                     // Get object size
-                    //Renderer objRenderer = obj.GetComponent<Renderer>();
-                    //print("NOM DE L'OBJET " + obj.gameObject.name);
+                    
                     Renderer objRenderer;
                     objRenderer = obj.GetComponentInChildren<Renderer>();
-                    /*if (obj.transform.GetChild(0).GetChild(0).TryGetComponent<Renderer>(out objRenderer)) { }
-                    else if (obj.transform.GetChild(0).TryGetComponent<Renderer>(out objRenderer)) { }
-                    else if (obj.TryGetComponent<Renderer>(out objRenderer)) { }*/
+                    
                     
                     objectSize = Mathf.Max(objRenderer.bounds.size.x, objRenderer.bounds.size.y);
 
@@ -144,7 +139,7 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
 
                     if (possessedObject != null)
                     {
-                        //print("NON NULLLL");
+                        
                         // Check if the object is moving in front of him
                         if (possessedObject.IsMoving)
                         {
@@ -155,47 +150,20 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
                             isObjectMoving = true;
                             foundMovingObject = true;
                             currentMovingObject = possessedObject.gameObject;
-
-                            //if(alertIcon != null)
-                            //{
-                            //    alertIcon.enabled = true;
-                            //}
-
                             HandleSoundEvent(currentMovingObject);
-                            //soundEvent.Post(gameObject);
+                            
                         }
-
-                        //HandleChangedPositionSuspicion(possessedObject, objectSize);
                     }
 
 
-                }
-                else if(hit.collider != null)
-                {
-                    //print(hit.collider.gameObject.name);
                 }
             }
         }
         // Object stopped moving
         if(!foundMovingObject && lastMovingObject != null)
         {
-            //lastMovingObject = null;
             soundHasPlayed = false;
-
-            //if(alertIcon != null && isObjectMoving == false)
-            //{
-            //    alertIcon.enabled = false;
-            //}
         }
-
-        //if(wasObjectMoving && !isObjectMoving)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-        //else if(!wasObjectMoving && !isObjectMoving && !isNonSuspiciousSoundPlaying)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
 
         HandleMovementSuspicion(objectSize);
     }
@@ -226,22 +194,12 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
 
     public void FlipFieldOfView()
     {
-        //directionX = facingRight ? -1f : 1f;
-
         if (GetComponentInChildren<NPCSpriteManager>() == null)
         {
             Vector3 rotationDegrees = fieldOfView.transform.eulerAngles;
             float newZ = facingRight ? -90f : 90f;
             fieldOfView.transform.localRotation = Quaternion.Euler(0, 0, newZ);
-        }
-
-        //Vector3 rotationDegrees = fieldOfView.transform.eulerAngles;
-        //float newZ = facingRight ? -90f : 90f;
-        //fieldOfView.transform.localRotation = Quaternion.Euler(0, 0, newZ);
-
-        //float currentZ = Mathf.Round(rotationDegrees.z);
-        //float newZ = currentZ == 90 ? -90 : 90;
-        //rotationDegrees.z = -rotationDegrees.z;
+        }       
     }
 
     // Manage the sound made by the NPC when he sees an object moving
@@ -249,7 +207,7 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
     {
         // Check if we are past the cooldown
         bool cooldownElapsed = (Time.time - lastSoundTime) >= soundCooldown;
-        //print(cooldownElapsed);
+
         // Case 1: Different object than before - play sound if cooldown has elapsed
         bool isDifferentObject = lastMovingObject != currentMovingObject;
 
@@ -280,10 +238,6 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
             return;
         }
         nonSuspiciousSoundCoroutine = StartCoroutine(PlayNonSuspiciousSound());
-        //if(!isNonSuspiciousSoundPlaying && nonSuspiciousSoundCoroutine == null)
-        //{
-        //    nonSuspiciousSoundCoroutine = StartCoroutine(PlayNonSuspiciousSound());
-        //}
     }
 
     protected virtual IEnumerator PlayNonSuspiciousSound()
@@ -301,7 +255,6 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
             if(nonSuspiciousSoundEvent != null)
             {
                 nonSuspiciousSoundEvent.Post(gameObject);
-                //alertIcon.enabled = false;
             }
             isNonSuspiciousSoundPlaying = true;
         }
@@ -349,7 +302,6 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
         this.transform.position = initialPosition;
         this.transform.rotation = initialRotation;
         facingRight = initialFacingRight;
-        //npcSpriteRenderer.flipX = !facingRight;
         currentFloorLevel = initialFloorLevel;
         // Reset icon movement detection
         if(alertSpriteRenderer != null)
@@ -369,6 +321,5 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
         isNonSuspiciousSoundPlaying = false;
         fovLight.color = nonSuspiciousColorFOV;
         StopAllCoroutines();
-        //StartNonSuspiciousSound();
     }
 }
