@@ -13,7 +13,6 @@ public class NPCInvestigationController : MonoBehaviour
 
     public event Action OnInvestigationStarted;
     public event Action OnInvestigationEnded;
-    public event Action OnAllInvestigationsCleared;
 
     public bool IsInvestigating => isInvestigating;
     public bool HasActiveInvestigation => hasActiveInvestigation;
@@ -80,7 +79,6 @@ public class NPCInvestigationController : MonoBehaviour
         if (investigationQueue.Count == 0)
         {
             hasActiveInvestigation = false;
-            OnAllInvestigationsCleared?.Invoke();
         }
 
         OnInvestigationEnded?.Invoke();

@@ -7,7 +7,7 @@ using UnityEngine;
 public class HumanNPCBehaviour : BasicNPCBehaviour
 {
     // Sound variables
-    [SerializeField] protected AK.Wwise.Event curiousNPCSoundEvent;
+    
 
     [Header("Suspicion variables")]
     // Variable manage suspicion of the NPC
@@ -21,6 +21,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     protected GameObject player;
 
     [Header("NPC sound variables")]
+    [SerializeField] protected AK.Wwise.Event curiousNPCSoundEvent;
     [SerializeField] protected AK.Wwise.Event nonSuspiciousSoundEvent;
     [SerializeField] protected float soundCooldown = 1.5f;  // Cooldown between sound of surprise
     protected float lastSoundTime;
@@ -72,7 +73,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
         investigationController.OnInvestigationStarted += HandleInvestigationStarted;
         investigationController.OnInvestigationEnded += HandleInvestigationEnded;
-        investigationController.OnAllInvestigationsCleared += HandleAllInvestigationsCleared;
     }
 
     //private Coroutine returnToInitialPositionCoroutine;
@@ -111,13 +111,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         StopNonSuspiciousSound();
         curiousNPCSoundEvent.Post(gameObject);
-
-        if (!hasSeenMovement && alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.sprite = investigationIcon;
-            fovLight.color = nonSuspiciousColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
     }
 
     private void HandleInvestigationEnded()
@@ -126,15 +119,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
         if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
             StartNonSuspiciousSound();
-    }
-
-    private void HandleAllInvestigationsCleared()
-    {
-        if (alertSpriteRenderer != null && !hasSeenMovement)
-        {
-            alertSpriteRenderer.enabled = false;
-            fovLight.color = nonSuspiciousColorFOV;
-        }
     }
 
     public virtual void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
@@ -191,6 +175,50 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         if (isObjectMoving && isCurrentlyObserving)
         {
             SuspicionManager.Instance.UpdateMovementSuspicion(objectSize);
+        }
+    }
+
+    protected virtual void UpdateIconDisplay()
+    {
+        if (alertSpriteRenderer == null) return;
+
+        // We don't show anything
+        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease)
+        {
+            alertSpriteRenderer.enabled = false;
+            fovLight.color = nonSuspiciousColorFOV;
+        }
+        // There is no investigation and there is no possessed object moving in front of the NPC
+        else if (!investigationController.HasActiveInvestigation && investigationController.QueueCount == 0 && !hasSeenMovement)
+        {
+            alertSpriteRenderer.enabled = false;
+            fovLight.color = nonSuspiciousColorFOV;
+        }
+        // Case 2: If there is an investigation and nothing to alert
+        else if (investigationController.HasActiveInvestigation && (!hasSeenMovement || SuspicionManager.Instance.HasSuspicionDecrease))
+        {
+            alertSpriteRenderer.sprite = investigationIcon;
+            alertSpriteRenderer.enabled = true;
+            fovLight.color = nonSuspiciousColorFOV;
+        }
+        // Case 1: The NPC saw an object moving
+        else if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0)
+        {
+            alertSpriteRenderer.sprite = alertIcon;
+            fovLight.color = alertColorFOV;
+            alertSpriteRenderer.enabled = true;
+        }
+
+        if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion <= 0)
+        {
+            hasSeenMovement = false;
+
+            if (investigationController.HasActiveInvestigation)
+            {
+                alertSpriteRenderer.sprite = investigationIcon;
+                fovLight.color = nonSuspiciousColorFOV;
+                alertSpriteRenderer.enabled = true;
+            }
         }
     }
 
@@ -280,44 +308,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         bool notSeeingReflection = !seePolterg;
 
         return baseConditions && notInvestigating && notSeeingReflection;
-    }
-
-    protected virtual void UpdateIconDisplay()
-    {
-        if (alertSpriteRenderer == null) return;
-
-        // We don't show anything
-        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease)
-        {
-            alertSpriteRenderer.enabled = false;
-            fovLight.color = nonSuspiciousColorFOV;
-        }
-        // Case 2: If there is an investigation and nothing to alert
-        else if (investigationController.HasActiveInvestigation && (!hasSeenMovement || SuspicionManager.Instance.HasSuspicionDecrease))
-        {
-            alertSpriteRenderer.sprite = investigationIcon;
-            alertSpriteRenderer.enabled = true;
-            fovLight.color = nonSuspiciousColorFOV;
-        }
-        // Case 1: The NPC saw an object moving
-        else if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0)
-        {
-            alertSpriteRenderer.sprite = alertIcon;
-            fovLight.color = alertColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
-
-        if(hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion <= 0)
-        {
-            hasSeenMovement = false;
-
-            if (investigationController.HasActiveInvestigation)
-            {
-                alertSpriteRenderer.sprite = investigationIcon;
-                fovLight.color = nonSuspiciousColorFOV;
-                alertSpriteRenderer.enabled = true;
-            }
-        }
     }
 
     // Verify if the object is in the field of view of the NPC
@@ -485,7 +475,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         investigationController.OnInvestigationStarted -= HandleInvestigationStarted;
         investigationController.OnInvestigationEnded -= HandleInvestigationEnded;
-        investigationController.OnAllInvestigationsCleared -= HandleAllInvestigationsCleared;
     }
 
     private void OnDrawGizmos()

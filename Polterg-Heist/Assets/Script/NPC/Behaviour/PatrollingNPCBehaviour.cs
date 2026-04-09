@@ -72,27 +72,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             StartCoroutine(GetUnstuck());
             return;
         }
-        // Priority 2: Handle investigation queue if we're not currently investigating or getting unstuck
-        //if(investigationQueue.Count > 0 && !isInvestigating && !isWaiting)
-        //{
-        //    StopNonSuspiciousSound();
-        //    if (returnToFloor != null)
-        //    {
-        //        StopCoroutine(returnToFloor);
-        //        returnToFloor = null;
-        //    }
-        //    isInvestigating = true;
-
-        //    if(patrolling != null)
-        //    {
-        //        StopCoroutine(patrolling);
-        //    }
-            
-        //    isPatrolling = false;
-        //    IEnumerator investigationCoroutine = investigationQueue.Dequeue();
-        //    StartCoroutine(RunInvestigation(investigationCoroutine));
-        //}
-        // Priority 4: Patrol if we're able to and should be
+        // Priority 2: Patrol if we're able to and should be
         else if(investigationController.QueueCount == 0 && !investigationController.IsInvestigating && !isWaiting && !isBlocked && !isPatrolling)
         {
             patrolling = StartCoroutine(Patrol());
@@ -124,38 +104,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
 
         return baseConditions && !isBlocked;
     }
-
-    //protected override IEnumerator RunInvestigation(IEnumerator investigation)
-    //{
-    //    StopNonSuspiciousSound();
-    //    // Wait until we're not blocked, not in a room, and not getting unstuck
-    //    while (isBlocked || isInRoom || isWaiting)
-    //    {
-    //        yield return new WaitForSeconds(0.5f);
-    //    }
-
-    //    yield return StartCoroutine(investigation);
-    //    isInvestigating = false;
-
-    //    // If there is no more investigation we disable the icons
-    //    if (investigationQueue.Count == 0 && !hasSeenMovement)
-    //    {
-    //        hasActiveInvestigation = false;
-
-    //        if (alertSpriteRenderer != null)
-    //        {
-    //            alertSpriteRenderer.enabled = false;
-    //            fovLight.color = nonSuspiciousColorFOV;
-    //        }
-    //    }
-
-    //    lastSuspiciousTime = Time.time;
-
-    //    if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-    //    {
-    //        StartNonSuspiciousSound();
-    //    }
-    //}
 
     public IEnumerator ReturnRightFloor()
     {
