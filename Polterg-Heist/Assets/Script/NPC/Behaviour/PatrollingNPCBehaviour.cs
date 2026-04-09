@@ -35,6 +35,8 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
     public bool IsBlocked => isBlocked;
     public bool IsInRoom => isInRoom;
 
+    public bool IsWaiting => isWaiting;
+
     private Coroutine returnToFloor;
     private Coroutine patrolling;
     protected override void Start()
@@ -71,40 +73,34 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             return;
         }
         // Priority 2: Handle investigation queue if we're not currently investigating or getting unstuck
-        if(investigationQueue.Count > 0 && !isInvestigating && !isWaiting)
-        {
-            StopNonSuspiciousSound();
-            if (returnToFloor != null)
-            {
-                StopCoroutine(returnToFloor);
-                returnToFloor = null;
-            }
-            isInvestigating = true;
+        //if(investigationQueue.Count > 0 && !isInvestigating && !isWaiting)
+        //{
+        //    StopNonSuspiciousSound();
+        //    if (returnToFloor != null)
+        //    {
+        //        StopCoroutine(returnToFloor);
+        //        returnToFloor = null;
+        //    }
+        //    isInvestigating = true;
 
-            if(patrolling != null)
-            {
-                StopCoroutine(patrolling);
-            }
+        //    if(patrolling != null)
+        //    {
+        //        StopCoroutine(patrolling);
+        //    }
             
-            isPatrolling = false;
-            IEnumerator investigationCoroutine = investigationQueue.Dequeue();
-            StartCoroutine(RunInvestigation(investigationCoroutine));
-        }
+        //    isPatrolling = false;
+        //    IEnumerator investigationCoroutine = investigationQueue.Dequeue();
+        //    StartCoroutine(RunInvestigation(investigationCoroutine));
+        //}
         // Priority 4: Patrol if we're able to and should be
-        else if(investigationQueue.Count == 0 && !isInvestigating && !isWaiting && !isBlocked && !isPatrolling)
+        else if(investigationController.QueueCount == 0 && !investigationController.IsInvestigating && !isWaiting && !isBlocked && !isPatrolling)
         {
             patrolling = StartCoroutine(Patrol());
         }
 
 
-        // Handle non suspicious sound for patrolling NPCs
-        bool shouldStopNonSuspiciousSound = (!CanPlayNonSuspiciousSound() || isInvestigating || investigationQueue.Count > 0) && isNonSuspiciousSoundPlaying;
-
-        // Stop the sound if conditions require it
-        if (shouldStopNonSuspiciousSound)
-        {
+        if ((!CanPlayNonSuspiciousSound() || investigationController.IsInvestigating) && isNonSuspiciousSoundPlaying)
             StopNonSuspiciousSound();
-        }
     }
 
     protected override void UpdateIconDisplay()
@@ -129,37 +125,37 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         return baseConditions && !isBlocked;
     }
 
-    protected override IEnumerator RunInvestigation(IEnumerator investigation)
-    {
-        StopNonSuspiciousSound();
-        // Wait until we're not blocked, not in a room, and not getting unstuck
-        while (isBlocked || isInRoom || isWaiting)
-        {
-            yield return new WaitForSeconds(0.5f);
-        }
+    //protected override IEnumerator RunInvestigation(IEnumerator investigation)
+    //{
+    //    StopNonSuspiciousSound();
+    //    // Wait until we're not blocked, not in a room, and not getting unstuck
+    //    while (isBlocked || isInRoom || isWaiting)
+    //    {
+    //        yield return new WaitForSeconds(0.5f);
+    //    }
 
-        yield return StartCoroutine(investigation);
-        isInvestigating = false;
+    //    yield return StartCoroutine(investigation);
+    //    isInvestigating = false;
 
-        // If there is no more investigation we disable the icons
-        if (investigationQueue.Count == 0 && !hasSeenMovement)
-        {
-            hasActiveInvestigation = false;
+    //    // If there is no more investigation we disable the icons
+    //    if (investigationQueue.Count == 0 && !hasSeenMovement)
+    //    {
+    //        hasActiveInvestigation = false;
 
-            if (alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.enabled = false;
-                fovLight.color = nonSuspiciousColorFOV;
-            }
-        }
+    //        if (alertSpriteRenderer != null)
+    //        {
+    //            alertSpriteRenderer.enabled = false;
+    //            fovLight.color = nonSuspiciousColorFOV;
+    //        }
+    //    }
 
-        lastSuspiciousTime = Time.time;
+    //    lastSuspiciousTime = Time.time;
 
-        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        {
-            StartNonSuspiciousSound();
-        }
-    }
+    //    if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
+    //    {
+    //        StartNonSuspiciousSound();
+    //    }
+    //}
 
     public IEnumerator ReturnRightFloor()
     {

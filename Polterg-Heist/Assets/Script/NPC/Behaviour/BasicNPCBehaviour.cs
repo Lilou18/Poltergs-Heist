@@ -44,6 +44,9 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
     // Getters
     public float FloorLevel { get { return currentFloorLevel; } }
 
+    public float InitialFloorLevel => initialFloorLevel;
+    public Vector3 InitialPosition => initialPosition;
+
     public SpriteRenderer SpriteRenderer { get { return npcSpriteRenderer; } }
     public NPCMovementController NpcMovementController { get { return npcMovementController; } }
     public GameObject FieldOfView { get { return fieldOfView; } }

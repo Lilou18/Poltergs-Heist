@@ -317,6 +317,7 @@ GameObject:
   - component: {fileID: 7477523869567106515}
   - component: {fileID: 719027281930787979}
   - component: {fileID: 5139380479391363131}
+  - component: {fileID: 565660942685376578}
   - component: {fileID: 1171068450181168371}
   - component: {fileID: 5446643799531327712}
   - component: {fileID: 8359684003242961558}
@@ -447,11 +448,6 @@ MonoBehaviour:
     idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: 560026148bb62064cbcaeeb11db3d8b1, type: 2}
-  nonSuspiciousSoundEvent:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: f2457f34ad53fc04b8c6e53df05f8be9, type: 2}
-  soundCooldown: 1.5
   curiousNPCSoundEvent:
     idInternal: 0
     valueGuidInternal: 
@@ -461,10 +457,12 @@ MonoBehaviour:
   mirrorLayer:
     serializedVersion: 2
     m_Bits: 1024
-  surpriseWaitTime: 2
-  investigationWaitTime: 3
+  nonSuspiciousSoundEvent:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 11400000, guid: f2457f34ad53fc04b8c6e53df05f8be9, type: 2}
+  soundCooldown: 1.5
   investigationIcon: {fileID: 21300000, guid: 65770edc1ca5be2499feb7db7c35ce62, type: 3}
-  hasActiveInvestigation: 0
   audioSource: {fileID: 0}
   detectionRadiusLight: 20
   lightLayer:
@@ -497,6 +495,20 @@ MonoBehaviour:
   isMarble: 0
   movementSpeed: 6
   blindSpeed: 3
+--- !u!114 &565660942685376578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6430824331534524123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bba28f63a28967b4a9b07fc636134670, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surpriseWaitTime: 2
+  investigationWaitTime: 3
 --- !u!82 &1171068450181168371
 AudioSource:
   m_ObjectHideFlags: 0

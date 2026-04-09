@@ -34,18 +34,10 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
 
     [Header("Investigation Variables")]
-    [SerializeField] protected float surpriseWaitTime = 2f;
-    [SerializeField] protected float investigationWaitTime = 3f;
     [SerializeField] protected Sprite investigationIcon;
-
-    protected bool isInvestigating = false; // Is the NPC investigating something suspectful
-    [SerializeField]protected bool hasActiveInvestigation = false;
+    protected NPCInvestigationController investigationController;
     public AudioSource audioSource;  // Source of the surprised sound
 
-
-    protected Queue<IEnumerator> investigationQueue = new Queue<IEnumerator>();
-    private bool isAtInitialPosition = false;
-    private Coroutine currentInvestigation = null;
 
     [Header("Lighting Variable")]
     [SerializeField] float detectionRadiusLight = 20f;
@@ -65,7 +57,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         base.Start();
         player = GameObject.FindWithTag("Player");
         audioSource = GetComponent<AudioSource>();        
-        isAtInitialPosition = true;
         canSee = true;
 
         // Initialize sound tracking variables
@@ -76,9 +67,15 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
         visibleLayerID = SortingLayer.NameToID(visibleLayer);
         notVisibleLayerID = SortingLayer.NameToID(notVisibleLayer);
+
+        investigationController = GetComponent<NPCInvestigationController>();
+
+        investigationController.OnInvestigationStarted += HandleInvestigationStarted;
+        investigationController.OnInvestigationEnded += HandleInvestigationEnded;
+        investigationController.OnAllInvestigationsCleared += HandleAllInvestigationsCleared;
     }
 
-    private Coroutine returnToInitialPositionCoroutine;
+    //private Coroutine returnToInitialPositionCoroutine;
     protected override void Update()
     {
         base.Update();
@@ -87,27 +84,8 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
         CheckMirrorReflection();
 
-        if (investigationQueue.Count > 0 && !isInvestigating)
-        {            
-            if (returnToInitialPositionCoroutine != null)
-            {
-                StopCoroutine(returnToInitialPositionCoroutine);                
-                returnToInitialPositionCoroutine = null;
-            }
-
-            isAtInitialPosition = false;
-            hasActiveInvestigation = true;
-            IEnumerator investigationCoroutine = investigationQueue.Dequeue();
-            currentInvestigation = StartCoroutine(RunInvestigation(investigationCoroutine));
-        }
-        else if(investigationQueue.Count == 0 && !isInvestigating && !isAtInitialPosition)
-        {
-            isAtInitialPosition = true;
-            returnToInitialPositionCoroutine = StartCoroutine(ReturnToInitialPosition());
-        }
-
         // If investigation started or we see the poltergeist, stop non suspicious sound
-        if ((isInvestigating || investigationQueue.Count > 0 || seePolterg) && isNonSuspiciousSoundPlaying)
+        if ((investigationController.IsInvestigating || investigationController.QueueCount > 0 || seePolterg) && isNonSuspiciousSoundPlaying)
         {
             StopNonSuspiciousSound();
         }
@@ -126,6 +104,47 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
         HandleMovementSuspicion(result.objectSize);
         //HandleChangedPositionSuspicion(result.movingObject.GetComponent<PossessionController>(),result.objectSize);
+    }
+
+    // Investigation callback
+    private void HandleInvestigationStarted()
+    {
+        StopNonSuspiciousSound();
+        curiousNPCSoundEvent.Post(gameObject);
+
+        if (!hasSeenMovement && alertSpriteRenderer != null)
+        {
+            alertSpriteRenderer.sprite = investigationIcon;
+            fovLight.color = nonSuspiciousColorFOV;
+            alertSpriteRenderer.enabled = true;
+        }
+    }
+
+    private void HandleInvestigationEnded()
+    {
+        lastSuspiciousTime = Time.time;
+
+        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
+            StartNonSuspiciousSound();
+    }
+
+    private void HandleAllInvestigationsCleared()
+    {
+        if (alertSpriteRenderer != null && !hasSeenMovement)
+        {
+            alertSpriteRenderer.enabled = false;
+            fovLight.color = nonSuspiciousColorFOV;
+        }
+    }
+
+    public virtual void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
+    {
+        investigationController.EnqueueSoundInvestigation(objectsound, replaceObject, targetFloor);
+    }
+
+    public void EnqueueInvestigation(IEnumerator investigation)
+    {
+        investigationController.EnqueueInvestigation(investigation);
     }
 
     protected void HandleChangedPositionSuspicion(PossessionController possessedObject, float objectSize)
@@ -257,7 +276,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         bool baseConditions = !isObjectMoving;
 
-        bool notInvestigating = !isInvestigating && investigationQueue.Count == 0;
+        bool notInvestigating = !investigationController.IsInvestigating && investigationController.QueueCount == 0;
         bool notSeeingReflection = !seePolterg;
 
         return baseConditions && notInvestigating && notSeeingReflection;
@@ -268,13 +287,13 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         if (alertSpriteRenderer == null) return;
 
         // We don't show anything
-        if (!hasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease)
+        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease)
         {
             alertSpriteRenderer.enabled = false;
             fovLight.color = nonSuspiciousColorFOV;
         }
         // Case 2: If there is an investigation and nothing to alert
-        else if (hasActiveInvestigation && (!hasSeenMovement || SuspicionManager.Instance.HasSuspicionDecrease))
+        else if (investigationController.HasActiveInvestigation && (!hasSeenMovement || SuspicionManager.Instance.HasSuspicionDecrease))
         {
             alertSpriteRenderer.sprite = investigationIcon;
             alertSpriteRenderer.enabled = true;
@@ -292,7 +311,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         {
             hasSeenMovement = false;
 
-            if (hasActiveInvestigation)
+            if (investigationController.HasActiveInvestigation)
             {
                 alertSpriteRenderer.sprite = investigationIcon;
                 fovLight.color = nonSuspiciousColorFOV;
@@ -424,129 +443,13 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         SuspicionManager.Instance.UpdateSeeingPoltergSuspicion();
     }
 
-    // Start the investigation of the sound
-    public virtual void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
-    {
-        // Stop non suspicious sound when starting investigation
-        StopNonSuspiciousSound();
-        curiousNPCSoundEvent.Post(gameObject);
-
-        hasActiveInvestigation = true;
-        // Activate investigation icon if there is no other alert
-        if (!hasSeenMovement && alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.sprite = investigationIcon;
-            fovLight.color = nonSuspiciousColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
-
-        investigationQueue.Enqueue(InvestigateSoundObject(objectsound, replaceObject, targetFloor));
-    }
-
-    public void EnqueueInvestigation(IEnumerator investigation)
-    {
-        curiousNPCSoundEvent.Post(gameObject);
-
-        hasActiveInvestigation = true;
-
-        if (!hasSeenMovement && alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.sprite = investigationIcon;
-            fovLight.color = nonSuspiciousColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
-
-        investigationQueue.Enqueue(investigation);
-    }
-
-    protected virtual IEnumerator RunInvestigation(IEnumerator investigation)
-    {
-        isInvestigating = true;
-        yield return StartCoroutine(investigation);
-
-        // If there is no more investigation we disable the icons
-        if(investigationQueue.Count == 0 && !hasSeenMovement)
-        {
-            hasActiveInvestigation = false;
-
-            if(alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.enabled = false;
-                fovLight.color = nonSuspiciousColorFOV;
-            }
-        }
-
-        isInvestigating = false;
-        currentInvestigation = null;
-
-        // Mark this moment as the end of a suspicious event
-        lastSuspiciousTime = Time.time;
-
-        // Start non suspicious sound which will respect cooldown
-        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        {
-            StartNonSuspiciousSound();
-        }
-    }
-
-    // NPC behaviour for sound emitting object investigation
-    protected IEnumerator InvestigateSoundObject(SoundDetection objectsound, bool replaceObject, float targetFloor)
-    {
-        // Take a surprise pause before going on investigation
-        audioSource.Play();
-        npcMovementController.Reset();
-        yield return new WaitForSeconds(surpriseWaitTime);
-
-        yield return (npcMovementController.ReachTarget(objectsound.transform.position, currentFloorLevel, targetFloor));
-
-        // We can't find a path
-        if (!npcMovementController.CanFindPath)
-        {
-            yield break;
-        }
-
-        // Wait a bit of time before going back to normal
-        yield return new WaitForSeconds(investigationWaitTime);
-
-        // The NPC who must reset the Object reset it (if it's the case)
-        IResetObject resetObject = objectsound.GetComponent<IResetObject>();
-        if(resetObject != null)
-        {
-            if (replaceObject)
-            {
-                resetObject.ResetObject();
-            }
-        }
-    }
-
-    
-    // Return the NPC to it's initial position and facing direction
-    public  IEnumerator ReturnToInitialPosition()
-    {
-        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        {
-            StartNonSuspiciousSound();
-        }
-        yield return StartCoroutine(npcMovementController.ReachTarget(initialPosition, currentFloorLevel, initialFloorLevel));//ReachTarget(initialPosition, initialFloorLevel));
-
-        // Restore initial facing direction
-        if (facingRight != initialFacingRight)
-        {
-            facingRight = initialFacingRight;
-            FlipFieldOfView();
-        }
-    }
-
     public override void ResetInitialState()
     {
         base.ResetInitialState();
         StopAllCoroutines();
-        isAtInitialPosition = true;
         canSee = true;
         seePolterg = false;
-        isInvestigating = false;
-        investigationQueue.Clear(); // Clear all the investigations he should be doing
-        hasActiveInvestigation = false;
+
 
         hasSeenMovement = false;
 
@@ -576,6 +479,13 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     public void ResetSeePolterg()
     {
         seePolterg = false;
+    }
+
+    private void OnDisable()
+    {
+        investigationController.OnInvestigationStarted -= HandleInvestigationStarted;
+        investigationController.OnInvestigationEnded -= HandleInvestigationEnded;
+        investigationController.OnAllInvestigationsCleared -= HandleAllInvestigationsCleared;
     }
 
     private void OnDrawGizmos()
