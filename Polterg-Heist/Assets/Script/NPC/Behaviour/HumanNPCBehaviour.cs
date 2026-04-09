@@ -19,7 +19,19 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     [SerializeField] protected LayerMask mirrorLayer;   // Layer of the mirrors
 
     protected GameObject player;
-    
+
+    [Header("NPC sound variables")]
+    [SerializeField] protected AK.Wwise.Event nonSuspiciousSoundEvent;
+    [SerializeField] protected float soundCooldown = 1.5f;  // Cooldown between sound of surprise
+    protected float lastSoundTime;
+    protected GameObject lastMovingObject;
+    protected bool soundHasPlayed;
+
+    protected float nonSuspiciousSoundCooldown = 0f;//3f;  // Cooldown before restarting ambient sound
+    protected float lastSuspiciousTime;  // Last time something suspicious happened
+    protected bool isNonSuspiciousSoundPlaying = false;  // Is the ambient sound currently playing
+    protected Coroutine nonSuspiciousSoundCoroutine = null;
+
 
     [Header("Investigation Variables")]
     [SerializeField] protected float surpriseWaitTime = 2f;
@@ -56,6 +68,12 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         isAtInitialPosition = true;
         canSee = true;
 
+        // Initialize sound tracking variables
+        lastMovingObject = null;
+        soundHasPlayed = false;
+        lastSoundTime = -soundCooldown;
+        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
+
         visibleLayerID = SortingLayer.NameToID(visibleLayer);
         notVisibleLayerID = SortingLayer.NameToID(notVisibleLayer);
     }
@@ -68,11 +86,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         UpdateIconDisplay();
 
         CheckMirrorReflection();
-
-        if (npcSpriteRenderer == null)
-        {
-            print("WTF");
-        }
 
         if (investigationQueue.Count > 0 && !isInvestigating)
         {            
@@ -93,11 +106,161 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
             returnToInitialPositionCoroutine = StartCoroutine(ReturnToInitialPosition());
         }
 
-        // If investigation started or we see the poltergeist, stop ambient sound
+        // If investigation started or we see the poltergeist, stop non suspicious sound
         if ((isInvestigating || investigationQueue.Count > 0 || seePolterg) && isNonSuspiciousSoundPlaying)
         {
             StopNonSuspiciousSound();
         }
+    }
+
+    protected override void OnDetectionResult(DetectionResult result)
+    {
+        if (!result.foundMovingObject && lastMovingObject != null)
+            soundHasPlayed = false;
+
+        if (result.foundMovingObject && !result.wasAlreadyMoving)
+            StopNonSuspiciousSound();
+
+        if (result.foundMovingObject)
+            HandleSoundEvent(result.movingObject);
+
+        HandleMovementSuspicion(result.objectSize);
+        //HandleChangedPositionSuspicion(result.movingObject.GetComponent<PossessionController>(),result.objectSize);
+    }
+
+    protected void HandleChangedPositionSuspicion(PossessionController possessedObject, float objectSize)
+    {
+        if (!isObjectMoving)
+        {
+            // Check if the object has changed significantly of position and rotation
+            float positionChange = Vector2.Distance(possessedObject.LastKnownPosition, possessedObject.transform.position);
+            float rotationChange = Quaternion.Angle(possessedObject.LastKnownRotation, possessedObject.transform.rotation);
+
+            // The object moved or rotated too much out of sight of the NPC
+            if (positionChange >= minSuspiciousPosition || rotationChange >= minSuspiciousRotation)
+            {
+                //possessedObject.UpdateLastKnownPositionRotation();
+                SuspicionManager.Instance.UpdateDisplacementSuspicion(objectSize, rotationChange, positionChange);
+            }
+        }
+        // Update the new position and rotation of the object
+        possessedObject.UpdateLastKnownPositionRotation();
+    }
+
+    protected void HandleMovementSuspicion(float objectSize)
+    {
+        // If the NPC sees an object moving for the first time
+        if (isObjectMoving && !isCurrentlyObserving)
+        {
+            isCurrentlyObserving = true;
+            hasSeenMovement = true;
+            if (alertSpriteRenderer != null)
+            {
+                alertSpriteRenderer.sprite = alertIcon;
+                fovLight.color = alertColorFOV;
+                alertSpriteRenderer.enabled = true;
+            }
+            SuspicionManager.Instance.AddParanormalObserver();
+        }
+        // If the object has stopped moving
+        else if (!isObjectMoving && isCurrentlyObserving)
+        {
+            isCurrentlyObserving = false;
+            SuspicionManager.Instance.RemoveParanormalObserver();
+        }
+        // If the object is still moving
+        if (isObjectMoving && isCurrentlyObserving)
+        {
+            SuspicionManager.Instance.UpdateMovementSuspicion(objectSize);
+        }
+    }
+
+    // Manage the sound made by the NPC when he sees an object moving
+    protected virtual void HandleSoundEvent(GameObject currentMovingObject)
+    {
+        // Check if we are past the cooldown
+        bool cooldownElapsed = (Time.time - lastSoundTime) >= soundCooldown;
+
+        // If it's a different object than the last one we tracked, play the sound
+        if (lastMovingObject != currentMovingObject)
+        {
+            surpriseSoundEvent.Post(gameObject);
+            npcAnimMouth.SetTrigger("IsSurprised");
+            lastMovingObject = currentMovingObject;
+            soundHasPlayed = true;
+            lastSoundTime = Time.time;
+        }
+        // If it's the same object but it had stopped and started again, play the sound
+        else if (lastMovingObject == currentMovingObject && !soundHasPlayed && cooldownElapsed)
+        {
+            surpriseSoundEvent.Post(gameObject);
+            npcAnimMouth.SetTrigger("IsSurprised");
+            soundHasPlayed = true;
+            lastSoundTime = Time.time;
+        }
+        // Otherwise, it's the same object still moving, so don't play the sound again
+    }
+
+    protected virtual void StartNonSuspiciousSound()
+    {
+        if (nonSuspiciousSoundCoroutine != null)
+        {
+            return;
+        }
+        nonSuspiciousSoundCoroutine = StartCoroutine(PlayNonSuspiciousSound());
+    }
+
+    protected virtual IEnumerator PlayNonSuspiciousSound()
+    {
+        // Wait for the cooldown period
+        float timeToWait = Mathf.Max(0, (lastSuspiciousTime + nonSuspiciousSoundCooldown) - Time.time);
+        if (timeToWait > 0)
+        {
+            yield return new WaitForSeconds(timeToWait);
+        }
+
+        // Check if we should still play the sound (nothing happened during the waiting time)
+        if (CanPlayNonSuspiciousSound())
+        {
+            if (nonSuspiciousSoundEvent != null)
+            {
+                nonSuspiciousSoundEvent.Post(gameObject);
+            }
+            isNonSuspiciousSoundPlaying = true;
+        }
+        else
+        {
+            nonSuspiciousSoundCoroutine = null;
+        }
+
+
+    }
+
+    protected virtual void StopNonSuspiciousSound()
+    {
+        if (isNonSuspiciousSoundPlaying && nonSuspiciousSoundEvent != null)
+        {
+            nonSuspiciousSoundEvent.Stop(gameObject);
+            isNonSuspiciousSoundPlaying = false;
+        }
+
+        if (nonSuspiciousSoundCoroutine != null)
+        {
+            StopCoroutine(nonSuspiciousSoundCoroutine);
+            nonSuspiciousSoundCoroutine = null;
+        }
+
+        lastSuspiciousTime = Time.time;
+    }
+
+    protected virtual bool CanPlayNonSuspiciousSound()
+    {
+        bool baseConditions = !isObjectMoving;
+
+        bool notInvestigating = !isInvestigating && investigationQueue.Count == 0;
+        bool notSeeingReflection = !seePolterg;
+
+        return baseConditions && notInvestigating && notSeeingReflection;
     }
 
     protected virtual void UpdateIconDisplay()
@@ -135,63 +298,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
                 fovLight.color = nonSuspiciousColorFOV;
                 alertSpriteRenderer.enabled = true;
             }
-        }
-    }
-    protected override bool CanPlayNonSuspiciousSound()
-    {
-        bool baseConditions =  base.CanPlayNonSuspiciousSound();
-
-        // Human-specific conditions
-        bool notInvestigating = !isInvestigating && investigationQueue.Count == 0;
-        bool notSeeingReflection = !seePolterg;
-
-        return baseConditions && notInvestigating && notSeeingReflection;
-    }
-
-    protected override void HandleChangedPositionSuspicion(PossessionController possessedObject, float objectSize)
-    {
-        if (!isObjectMoving)
-        {
-            // Check if the object has changed significantly of position and rotation
-            float positionChange = Vector2.Distance(possessedObject.LastKnownPosition, possessedObject.transform.position);
-            float rotationChange = Quaternion.Angle(possessedObject.LastKnownRotation, possessedObject.transform.rotation);
-
-            // The object moved or rotated too much out of sight of the NPC
-            if (positionChange >= minSuspiciousPosition || rotationChange >= minSuspiciousRotation)
-            {
-                //possessedObject.UpdateLastKnownPositionRotation();
-                SuspicionManager.Instance.UpdateDisplacementSuspicion(objectSize, rotationChange, positionChange);
-            }
-        }
-        // Update the new position and rotation of the object
-        possessedObject.UpdateLastKnownPositionRotation();
-    }
-
-    protected override void HandleMovementSuspicion(float objectSize)
-    {
-        // If the NPC sees an object moving for the first time
-        if (isObjectMoving && !isCurrentlyObserving)
-        {
-            isCurrentlyObserving = true;
-            hasSeenMovement = true;
-            if(alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.sprite = alertIcon;
-                fovLight.color = alertColorFOV;
-                alertSpriteRenderer.enabled = true;
-            }
-            SuspicionManager.Instance.AddParanormalObserver();
-        }
-        // If the object has stopped moving
-        else if (!isObjectMoving && isCurrentlyObserving)
-        {
-            isCurrentlyObserving = false;
-            SuspicionManager.Instance.RemoveParanormalObserver();
-        }
-        // If the object is still moving
-        if (isObjectMoving && isCurrentlyObserving)
-        {
-            SuspicionManager.Instance.UpdateMovementSuspicion(objectSize);
         }
     }
 
@@ -321,7 +427,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     // Start the investigation of the sound
     public virtual void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
     {
-        // Stop ambient sound when starting investigation
+        // Stop non suspicious sound when starting investigation
         StopNonSuspiciousSound();
         curiousNPCSoundEvent.Post(gameObject);
 
@@ -376,7 +482,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         // Mark this moment as the end of a suspicious event
         lastSuspiciousTime = Time.time;
 
-        // Start ambient sound which will respect cooldown
+        // Start non suspicious sound which will respect cooldown
         if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
         {
             StartNonSuspiciousSound();
@@ -454,6 +560,13 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         {
             nonSuspiciousSoundEvent.Stop(gameObject);
         }
+
+        lastMovingObject = null;
+        soundHasPlayed = false;
+        StopNonSuspiciousSound();
+        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
+        isNonSuspiciousSoundPlaying = false;
+
         npcAnim.SetBool("InMovement", false);
         npcAnimMouth.SetBool("IsSurprised", false);
         npcMovementController.Reset();

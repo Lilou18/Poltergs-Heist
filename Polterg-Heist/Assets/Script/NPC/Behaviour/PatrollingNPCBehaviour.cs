@@ -56,11 +56,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
     }
     protected override void Update()
     {
-        if(npcSpriteRenderer == null)
-        {
-            print("WTF");
-        }
-
         UpdateIconDisplay();
 
         DetectMovingObjects();
@@ -98,16 +93,15 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         // Priority 4: Patrol if we're able to and should be
         else if(investigationQueue.Count == 0 && !isInvestigating && !isWaiting && !isBlocked && !isPatrolling)
         {
-            //nonSuspiciousSoundEvent.Post(gameObject);
             patrolling = StartCoroutine(Patrol());
         }
 
 
-        // Handle ambient sound for patrolling NPCs
-        bool shouldStopAmbientSound = (!CanPlayNonSuspiciousSound() || isInvestigating || investigationQueue.Count > 0) && isNonSuspiciousSoundPlaying;
+        // Handle non suspicious sound for patrolling NPCs
+        bool shouldStopNonSuspiciousSound = (!CanPlayNonSuspiciousSound() || isInvestigating || investigationQueue.Count > 0) && isNonSuspiciousSoundPlaying;
 
         // Stop the sound if conditions require it
-        if (shouldStopAmbientSound)
+        if (shouldStopNonSuspiciousSound)
         {
             StopNonSuspiciousSound();
         }
@@ -169,7 +163,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
 
     public IEnumerator ReturnRightFloor()
     {
-        yield return StartCoroutine(npcMovementController.ReachFloor(currentFloorLevel, initialFloorLevel));//ReachFloor(initialFloorLevel));
+        yield return StartCoroutine(npcMovementController.ReachFloor(currentFloorLevel, initialFloorLevel));
         if (FloorLevel == initialFloorLevel)
         {
             //rightFloor = true;
@@ -322,7 +316,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         {
             AkMarkerCallbackInfo markerInfo = (AkMarkerCallbackInfo)in_info;
 
-            // Ici tu déclenches ton animation
             Animator roomAnimator = currentPoint.GetComponent<Animator>();
             if (roomAnimator != null)
             {
