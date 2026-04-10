@@ -437,6 +437,9 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         base.ResetInitialState();
         StopAllCoroutines();
+
+        investigationController.ResetState();
+
         canSee = true;
         seePolterg = false;
 

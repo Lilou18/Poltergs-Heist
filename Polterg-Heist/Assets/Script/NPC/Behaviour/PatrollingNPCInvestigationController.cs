@@ -1,8 +1,6 @@
 using System.Collections;
 using UnityEngine;
 
-// Utilisé exclusivement par PatrollingNPCBehaviour
-// Override RunInvestigation pour attendre que le NPC soit dans un état valide
 public class PatrollingNPCInvestigationController : NPCInvestigationController
 {
     private PatrollingNPCBehaviour patrollingBehaviour;
@@ -15,10 +13,25 @@ public class PatrollingNPCInvestigationController : NPCInvestigationController
 
     protected override IEnumerator RunInvestigation(IEnumerator investigation)
     {
-        // Attend que le NPC soit disponible avant de commencer
-        while (patrollingBehaviour.IsBlocked || patrollingBehaviour.IsInRoom || patrollingBehaviour.IsWaiting)
+        isInvestigating = true;
+        while (patrollingBehaviour.CurrentState == PatrollingNPCState.InRoom || patrollingBehaviour.CurrentState == PatrollingNPCState.Blocked)
+            yield return new WaitForSeconds(0.5f);
+
+        patrollingBehaviour.CurrentState = PatrollingNPCState.Investigating;
+        patrollingBehaviour.StopPatrolling();
+
+        while (patrollingBehaviour.CurrentState == PatrollingNPCState.WaitingAtPoint)
             yield return new WaitForSeconds(0.5f);
 
         yield return StartCoroutine(base.RunInvestigation(investigation));
+    }
+
+    protected override IEnumerator ReturnToInitialPosition()
+    {
+        patrollingBehaviour.CurrentState = PatrollingNPCState.Returning;
+
+        yield return base.ReturnToInitialPosition();
+
+        patrollingBehaviour.CurrentState = PatrollingNPCState.Idle;
     }
 }

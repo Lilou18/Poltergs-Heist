@@ -211,7 +211,6 @@ public class PossessionManager : MonoBehaviour, IResetInitialState
             print("NOT DEPOSSESSING CAUSE CLIMBING");
             return;
         }
-        print("STOP POSSESSION!");
         if (onDepossess != null) { onDepossess(depossessParam); }
 
         possessionOffSoundEvent.Post(gameObject);

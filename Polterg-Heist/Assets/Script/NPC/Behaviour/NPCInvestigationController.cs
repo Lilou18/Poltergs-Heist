@@ -104,7 +104,7 @@ public class NPCInvestigationController : MonoBehaviour
     }
 
     // Return the NPC to it's initial position and facing direction
-    private IEnumerator ReturnToInitialPosition()
+    protected virtual IEnumerator ReturnToInitialPosition()
     {
         yield return StartCoroutine(npcMovementController.ReachTarget(
             npcBehaviour.InitialPosition,

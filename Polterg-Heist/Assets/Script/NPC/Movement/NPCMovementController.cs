@@ -309,6 +309,13 @@ public class NPCMovementController : MonoBehaviour
         npcAnim.SetBool("InMovement", false);
     }
 
+    public void StopMovement()
+    {
+        footstepsNPCSoundEvent.Stop(gameObject);
+        isWalking = false;
+        npcAnim.SetBool("InMovement", false);
+    }
+
     StairController blockedStair;
     StairController secundBlockedStair;
     AK.Wwise.Event blockedSoundEvent;

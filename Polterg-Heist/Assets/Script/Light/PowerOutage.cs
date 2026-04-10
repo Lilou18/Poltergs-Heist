@@ -62,10 +62,8 @@ public class PowerOutage : MonoBehaviour, IPossessable, IResetInitialState
 
         foreach (HumanNPCBehaviour npc in allNPCs)
         {
-            //print("NPC");
             if (IsNPCAffected(npc, lightsClosed))
             {
-                //print("YES HERE");
                 PatrollingNPCBehaviour npcPatrol = npc.GetComponent<PatrollingNPCBehaviour>();
                 // Check if the NPC is blocked
                 if (npcPatrol != null && (npcPatrol.IsBlocked || npcPatrol.IsInRoom))
@@ -77,10 +75,7 @@ public class PowerOutage : MonoBehaviour, IPossessable, IResetInitialState
                     // The NPC is availabe to go an investigate
                     availableNPCs.Add(npc);
                 }
-            }
-            else
-            {
-                //print("NOT AFFECYED");
+
             }
         }
         if(availableNPCs.Count > 0)
