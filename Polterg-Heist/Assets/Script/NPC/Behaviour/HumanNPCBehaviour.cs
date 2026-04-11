@@ -13,7 +13,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     // Variable manage suspicion of the NPC
     [SerializeField] protected float minSuspiciousRotation; // Minimum rotation change in degrees to trigger suspicion
     [SerializeField] protected float minSuspiciousPosition; // Minimum position change to trigger suspicion
-    protected bool canSee;  // Ability of the player to see
+    
 
     [Header("Mirror")]
     [SerializeField] protected LayerMask mirrorLayer;   // Layer of the mirrors
@@ -24,15 +24,13 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     protected HumanNPCSoundController soundController;
     
     [Header("Investigation Variables")]
-    [SerializeField] protected Sprite investigationIcon;
     protected NPCInvestigationController investigationController;
-    public AudioSource audioSource;  // Source of the surprised sound
-
 
     [Header("Lighting Variable")]
     [SerializeField] float detectionRadiusLight = 20f;
     [SerializeField] LayerMask lightLayer;  // Layer of the gameobject light
     [SerializeField] LayerMask wallFloorLayer;   // Layer of the gameobject wall
+    protected bool canSee;  // Ability of the player to see
     string visibleLayer = "Default";
     string notVisibleLayer = "NotVisible";
     int visibleLayerID;
@@ -45,8 +43,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     protected override void Start()
     {
         base.Start();
-        player = GameObject.FindWithTag("Player");
-        audioSource = GetComponent<AudioSource>();   
+        player = GameObject.FindWithTag("Player");         
         soundController = GetComponent<HumanNPCSoundController>();
         investigationController = GetComponent<NPCInvestigationController>();
         canSee = true;
@@ -73,9 +70,17 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         base.Update();
 
-        UpdateIconDisplay();
-
         CheckMirrorReflection();
+    }
+
+    protected override IconState GetIconState()
+    {
+        if (seePolterg) return IconState.Alert;
+        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease) return IconState.None;
+        if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0) return IconState.Alert;
+        if (investigationController.HasActiveInvestigation || investigationController.QueueCount > 0) return IconState.Investigation;
+             
+        return IconState.None;
     }
 
     protected override void OnDetectionResult(DetectionResult result)
@@ -132,12 +137,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         {
             isCurrentlyObserving = true;
             hasSeenMovement = true;
-            if (alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.sprite = alertIcon;
-                fovLight.color = alertColorFOV;
-                alertSpriteRenderer.enabled = true;
-            }
             SuspicionManager.Instance.AddParanormalObserver();
         }
         // If the object has stopped moving
@@ -151,52 +150,10 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         {
             SuspicionManager.Instance.UpdateMovementSuspicion(objectSize);
         }
-    }
-
-    protected virtual void UpdateIconDisplay()
-    {
-        if (alertSpriteRenderer == null) return;
-
-        // We don't show anything
-        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease)
-        {
-            alertSpriteRenderer.enabled = false;
-            fovLight.color = nonSuspiciousColorFOV;
-        }
-        // There is no investigation and there is no possessed object moving in front of the NPC
-        else if (!investigationController.HasActiveInvestigation && investigationController.QueueCount == 0 && !hasSeenMovement)
-        {
-            alertSpriteRenderer.enabled = false;
-            fovLight.color = nonSuspiciousColorFOV;
-        }
-        // Case 2: If there is an investigation and nothing to alert
-        else if (investigationController.HasActiveInvestigation && (!hasSeenMovement || SuspicionManager.Instance.HasSuspicionDecrease))
-        {
-            alertSpriteRenderer.sprite = investigationIcon;
-            alertSpriteRenderer.enabled = true;
-            fovLight.color = nonSuspiciousColorFOV;
-        }
-        // Case 1: The NPC saw an object moving
-        else if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0)
-        {
-            alertSpriteRenderer.sprite = alertIcon;
-            fovLight.color = alertColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
 
         if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion <= 0)
-        {
             hasSeenMovement = false;
-
-            if (investigationController.HasActiveInvestigation)
-            {
-                alertSpriteRenderer.sprite = investigationIcon;
-                fovLight.color = nonSuspiciousColorFOV;
-                alertSpriteRenderer.enabled = true;
-            }
-        }
     }
-
 
     // Verify if the object is in the field of view of the NPC
     protected override bool IsObjectInFieldOfView(Collider2D obj)
@@ -304,14 +261,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         seePolterg = true;
         soundController.OnPoltergSeen();
-
-        if(alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.sprite = alertIcon;
-            fovLight.color = alertColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
-
         SuspicionManager.Instance.UpdateSeeingPoltergSuspicion();
     }
 
@@ -325,21 +274,11 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
         canSee = true;
         seePolterg = false;
-
-
-        hasSeenMovement = false;
-
-        if(alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.enabled = false;
-        }
-        fovLight.color = nonSuspiciousColorFOV;
-        
+        hasSeenMovement = false;       
 
         npcAnim.SetBool("InMovement", false);
 
         npcMovementController.Reset();
-        fovLight.color = nonSuspiciousColorFOV;
     }
 
     public void ResetSeePolterg()

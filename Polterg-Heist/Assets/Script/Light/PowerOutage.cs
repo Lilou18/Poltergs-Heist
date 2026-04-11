@@ -93,7 +93,6 @@ public class PowerOutage : MonoBehaviour, IPossessable, IResetInitialState
         foreach (HumanNPCBehaviour npc in npcList)
         {
             // Surprise sound
-            npc.audioSource.Play();
             if (!isRepairing)
             {
                 isRepairing = true;

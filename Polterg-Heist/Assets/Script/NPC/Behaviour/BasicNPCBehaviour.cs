@@ -14,21 +14,16 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
     protected float fieldOfViewAngle;
     protected GameObject fieldOfView;
     protected Light2D fovLight;
-    [SerializeField] protected Color nonSuspiciousColorFOV;//"00FF1A";
-    [SerializeField] protected Color alertColorFOV;
     protected Quaternion initialFOVRotation;
 
     [Header("NPC global variables")]
     [SerializeField] protected float currentFloorLevel;   // Floor where the npc is located
-    [SerializeField] protected SpriteRenderer alertSpriteRenderer;
-    [SerializeField] protected Sprite alertIcon;
     protected float initialFloorLevel;
     protected NPCMovementController npcMovementController;
     protected SpriteRenderer npcSpriteRenderer;
     protected Animator npcAnim;
-    //protected Animator npcAnimMouth;
 
-
+    protected NPCIconDisplay iconDisplay;
 
     // Initial variables
     protected Vector3 initialPosition;  // Initial position of the NPC
@@ -64,16 +59,14 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
         npcSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
         npcMovementController = GetComponent<NPCMovementController>();
-        if (TryGetComponent<Cat>(out Cat cat)) { npcAnim = GetComponentInChildren<Animator>(); }
-        else 
-        {
-            npcAnim = GetComponentInChildren<Animator>();
-            //npcAnimMouth = npcAnim.transform.GetChild(0).GetComponentInChildren<Animator>();
 
-        }
+        npcAnim = GetComponentInChildren<Animator>();
+
 
         fieldOfView = transform.GetChild(0).gameObject;
         fovLight = GetComponentInChildren<Light2D>();
+
+        iconDisplay = GetComponent<NPCIconDisplay>();
 
         initialPosition = transform.position;
         initialRotation = transform.rotation;
@@ -86,6 +79,17 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
     protected virtual void Update()
     {
         DetectMovingObjects();
+        UpdateIconDisplay();
+    }
+
+    protected void UpdateIconDisplay()
+    {
+        if (iconDisplay != null)
+            iconDisplay.UpdateIcon(GetIconState());
+    }
+    protected virtual IconState GetIconState()
+    {
+        return IconState.None;
     }
 
     protected DetectionResult ScanForMovingObject()
@@ -178,18 +182,14 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
         this.transform.rotation = initialRotation;
         facingRight = initialFacingRight;
         currentFloorLevel = initialFloorLevel;
-        // Reset icon movement detection
-        if(alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.enabled = false;
-        }
-        fovLight.color = nonSuspiciousColorFOV;
+
         Vector3 rotationDegrees = fieldOfView.transform.eulerAngles;
         rotationDegrees.z = facingRight ? -90f : 90f;
         fieldOfView.transform.eulerAngles = rotationDegrees;
         fovLight.transform.rotation = initialFOVRotation;
-        
-        fovLight.color = nonSuspiciousColorFOV;
+
+        if (iconDisplay != null)
+            iconDisplay.Reset();
         StopAllCoroutines();
     }
 }
@@ -197,11 +197,11 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
 public readonly struct DetectionResult
 {
     public readonly bool foundMovingObject;
-    public readonly bool wasAlreadyMoving;  // état du frame précédent, avant le scan
+    public readonly bool wasAlreadyMoving;  
     public readonly GameObject movingObject;
     public readonly float objectSize;
-    public readonly float objectWidth;      // utilisé par Cat pour vérifier maxWidthObject
-    public readonly float objectHeight;     // utilisé par Cat pour vérifier maxHeightObject
+    public readonly float objectWidth;      
+    public readonly float objectHeight;     
 
     public DetectionResult(
         bool found,

@@ -57,9 +57,11 @@ public class Cat : BasicNPCBehaviour, IPatrol
 
     protected override void Update()
     {
+        UpdateIconDisplay();
+
         if (canMove)
         {
-            base.Update();
+            DetectMovingObjects();
             
             // Patrolling cat
             if (!isHunting && !isAttacking && !isPatrolling)
@@ -85,6 +87,13 @@ public class Cat : BasicNPCBehaviour, IPatrol
         }        
     }
 
+    protected override IconState GetIconState()
+    {
+        if (!canMove) return IconState.None;
+        if (isHunting || isAttacking) return IconState.Alert;
+        return IconState.None;
+    }
+
     // Cat movement detection
     protected override void OnDetectionResult(DetectionResult result)
     {
@@ -93,11 +102,11 @@ public class Cat : BasicNPCBehaviour, IPatrol
             isHunting = true;
             targetPossessedObject = result.movingObject;
 
-            if (alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.enabled = true;
-                fovLight.color = alertColorFOV;
-            }
+            //if (alertSpriteRenderer != null)
+            //{
+            //    alertSpriteRenderer.enabled = true;
+            //    fovLight.color = alertColorFOV;
+            //}
         }
     }
     
@@ -147,11 +156,11 @@ public class Cat : BasicNPCBehaviour, IPatrol
                 isAttacking = false;
                 targetPossessedObject = null;
 
-                if(alertSpriteRenderer != null)
-                {
-                    alertSpriteRenderer.enabled = false;
-                    fovLight.color = nonSuspiciousColorFOV;
-                }
+                //if(alertSpriteRenderer != null)
+                //{
+                //    alertSpriteRenderer.enabled = false;
+                //    fovLight.color = nonSuspiciousColorFOV;
+                //}
 
                 yield break;
             }
@@ -256,11 +265,11 @@ public class Cat : BasicNPCBehaviour, IPatrol
         catAnim.SetBool("IsAttacking", false);
         isAttacking = false;
 
-        if(alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.enabled = false;
-            fovLight.color = nonSuspiciousColorFOV;
-        }
+        //if(alertSpriteRenderer != null)
+        //{
+        //    alertSpriteRenderer.enabled = false;
+        //    fovLight.color = nonSuspiciousColorFOV;
+        //}
         targetObjectManager.isAttacked = false;
     }
 
@@ -281,11 +290,11 @@ public class Cat : BasicNPCBehaviour, IPatrol
                 catAnim.SetBool("IsAttacking", false);
                 catAnim.SetBool("IsCaught", true);
                 cage = collision.gameObject;
-                if (alertSpriteRenderer != null)
-                {
-                    alertSpriteRenderer.enabled = false;
-                    fovLight.color = nonSuspiciousColorFOV;
-                }
+                //if (alertSpriteRenderer != null)
+                //{
+                //    alertSpriteRenderer.enabled = false;
+                //    fovLight.color = nonSuspiciousColorFOV;
+                //}
             }            
         }
     }
@@ -324,7 +333,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
         catSlapEvent.Stop(gameObject);
         catSoundsEvent.Post(gameObject);
 
-        fovLight.color = nonSuspiciousColorFOV;
+        //fovLight.color = nonSuspiciousColorFOV;
 
 
     }

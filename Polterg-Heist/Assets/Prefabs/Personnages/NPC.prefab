@@ -319,6 +319,7 @@ GameObject:
   - component: {fileID: 5139380479391363131}
   - component: {fileID: 565660942685376578}
   - component: {fileID: 4387419160218365363}
+  - component: {fileID: 6674417833095875222}
   - component: {fileID: 1171068450181168371}
   - component: {fileID: 5446643799531327712}
   - component: {fileID: 8359684003242961558}
@@ -440,11 +441,7 @@ MonoBehaviour:
   ignoreLayerSightBlocked:
     serializedVersion: 2
     m_Bits: 3308872
-  nonSuspiciousColorFOV: {r: 0, g: 1, b: 0.101960786, a: 1}
-  alertColorFOV: {r: 1, g: 0.015686275, b: 0, a: 1}
   currentFloorLevel: 0
-  alertSpriteRenderer: {fileID: 3511663466270294725}
-  alertIcon: {fileID: 21300000, guid: 0f2a294604cb26142a964f4745c1af41, type: 3}
   surpriseSoundEvent:
     idInternal: 0
     valueGuidInternal: 
@@ -454,7 +451,6 @@ MonoBehaviour:
   mirrorLayer:
     serializedVersion: 2
     m_Bits: 1024
-  investigationIcon: {fileID: 21300000, guid: 65770edc1ca5be2499feb7db7c35ce62, type: 3}
   audioSource: {fileID: 0}
   detectionRadiusLight: 20
   lightLayer:
@@ -526,6 +522,23 @@ MonoBehaviour:
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: f2457f34ad53fc04b8c6e53df05f8be9, type: 2}
   surpriseCooldown: 1.5
+--- !u!114 &6674417833095875222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6430824331534524123}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e1517edf1ab5df4d93219005c97a8fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  iconRenderer: {fileID: 3511663466270294725}
+  investigationIcon: {fileID: 21300000, guid: 65770edc1ca5be2499feb7db7c35ce62, type: 3}
+  alertIcon: {fileID: 21300000, guid: 0f2a294604cb26142a964f4745c1af41, type: 3}
+  nonSuspiciousColorFOV: {r: 0, g: 1, b: 0.101960786, a: 1}
+  alertColorFOV: {r: 1, g: 0.015686275, b: 0, a: 1}
 --- !u!82 &1171068450181168371
 AudioSource:
   m_ObjectHideFlags: 0

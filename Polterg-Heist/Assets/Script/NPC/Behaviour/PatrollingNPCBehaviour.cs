@@ -65,8 +65,11 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
     }
     protected override void Update()
     {
-        UpdateIconDisplay();
-        DetectMovingObjects();
+        //UpdateIconDisplay();
+        //DetectMovingObjects();
+
+        base.Update();
+
         CheckMirrorReflection();
 
         // Priority 1: si bloqué mais la room est libre se débloquer
@@ -95,15 +98,21 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         //}
     }
 
-    protected override void UpdateIconDisplay()
+    //protected override void UpdateIconDisplay()
+    //{
+    //    if (IsUnavailable)
+    //    {
+    //        if (alertSpriteRenderer != null)
+    //            alertSpriteRenderer.enabled = false;
+    //        return;
+    //    }
+    //    base.UpdateIconDisplay();
+    //}
+
+    protected override IconState GetIconState()
     {
-        if (IsUnavailable)
-        {
-            if (alertSpriteRenderer != null)
-                alertSpriteRenderer.enabled = false;
-            return;
-        }
-        base.UpdateIconDisplay();
+        if (IsUnavailable) return IconState.None;
+        return base.GetIconState();
     }
 
     // Override to add patrolling-specific conditions
@@ -327,6 +336,6 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         }
         npcLockedSoundEvent.Stop(gameObject);
 
-        fovLight.color = nonSuspiciousColorFOV;
+        //fovLight.color = nonSuspiciousColorFOV;
     }
 }
