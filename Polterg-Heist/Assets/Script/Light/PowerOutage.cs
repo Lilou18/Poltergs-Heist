@@ -114,8 +114,7 @@ public class PowerOutage : MonoBehaviour, IPossessable, IResetInitialState
             
             Collider2D lightCollider = gameObjectLight.GetComponent<Collider2D>();
             if (LightUtility.IsPointHitByLight(lightCollider, npcCollider, wallFloorLayer))
-            {
-                print("SHOULD BE TRUE");
+            {                
                 return true;
             }
         }

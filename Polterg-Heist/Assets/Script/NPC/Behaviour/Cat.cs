@@ -21,13 +21,10 @@ public class Cat : BasicNPCBehaviour, IPatrol
     [SerializeField] float huntingSpeed = 8f;
     [SerializeField] float maxHeightObject = 0.6f;  // Maximum height of an object that the cat can chase
     [SerializeField] float maxWidthObject = 0.6f;   //Maximum width of an object thtat the cat can chase
-    //[SerializeField] float distanceWithTarget;  // Object targeted by the cat
     public bool isHunting;   // Is the cat chasing an objet
     private bool isAttacking;   // Is the cat attacking the object
-    private bool isPatrolling;
     GameObject targetPossessedObject; // Cat hunting target
 
-    AudioSource audioSource;
     Animator catAnim;
     Collider2D catCollider;
     Coroutine patrolCoroutine;
@@ -45,9 +42,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
         isHunting = false;
         isAttacking = false;
         canMove = true;
-        isPatrolling = false;
 
-        audioSource = GetComponent<AudioSource>();
         catCollider = GetComponent<Collider2D>();
         catAnim = GetComponentInChildren<Animator>();
 
@@ -64,14 +59,13 @@ public class Cat : BasicNPCBehaviour, IPatrol
             DetectMovingObjects();
             
             // Patrolling cat
-            if (!isHunting && !isAttacking && !isPatrolling)
+            if (!isHunting && !isAttacking && patrolCoroutine == null)
             {
                 if (!isNormalCat)
                 {
                     isNormalCat = true;
                     catSoundsEvent.Post(gameObject);
-                }
-                isPatrolling = true;
+                }                
                 patrolCoroutine = StartCoroutine(Patrol());
             }
             // Hunting Cat
@@ -79,9 +73,13 @@ public class Cat : BasicNPCBehaviour, IPatrol
             {
                 isNormalCat = false;
                 catSoundsEvent.Stop(gameObject);
-                //StopAllCoroutines();
-                StopCoroutine(patrolCoroutine);
-                isPatrolling = false;
+
+                if (patrolCoroutine != null)
+                {
+                    StopCoroutine(patrolCoroutine);
+                    patrolCoroutine = null;
+                }
+
                 StartCoroutine(ObjectHunting());
             }
         }        
@@ -101,12 +99,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
         {
             isHunting = true;
             targetPossessedObject = result.movingObject;
-
-            //if (alertSpriteRenderer != null)
-            //{
-            //    alertSpriteRenderer.enabled = true;
-            //    fovLight.color = alertColorFOV;
-            //}
         }
     }
     
@@ -118,14 +110,13 @@ public class Cat : BasicNPCBehaviour, IPatrol
         // Get movement direction
         Vector3 destination = new Vector3(nextPatrolPoint.Point.position.x, transform.position.y, transform.position.z);
         yield return npcMovementController.ReachTarget(destination, currentFloorLevel, nextPatrolPoint.FloorLevel);
-        isPatrolling = false;
+        patrolCoroutine = null;
         MoveToNextAvailablePatrolPoint();
     }
 
     // Which patrol point is the new destination of the cat
     public void MoveToNextAvailablePatrolPoint()
     {
-        int patrolPointPossibilities = patrolPoints.Length;
         indexPatrolPoints++;
         if (indexPatrolPoints >= patrolPoints.Length)
         {
@@ -137,8 +128,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
     // The cat must chase any object it sees moving
     private IEnumerator ObjectHunting()
     {
-        isAttacking = true;
-        audioSource.Play();
+        isAttacking = true;        
         surpriseSoundEvent.Post(gameObject);
 
         // Continue hunting until the cat catches the object or loses track of it
@@ -155,13 +145,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
                 isHunting = false;
                 isAttacking = false;
                 targetPossessedObject = null;
-
-                //if(alertSpriteRenderer != null)
-                //{
-                //    alertSpriteRenderer.enabled = false;
-                //    fovLight.color = nonSuspiciousColorFOV;
-                //}
-
                 yield break;
             }
 
@@ -235,9 +218,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
     // The cat attack the possessed object
     private IEnumerator AttackObject()
     {
-        isAttacking = true;
-        audioSource.Play();
-        
+        isAttacking = true;       
         catSlapEvent.Post(gameObject);
         catAnim.SetBool("IsAttacking", true);
 
@@ -249,7 +230,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
             yield break;
         }
         targetObjectManager.isAttacked = true;
-        print("ATTAK");
         targetObjectManager.LockPossession(true);   // The player can't possessed this object as long as the cat attack it
         // After the attack the object is no longer a target
         targetPossessedObject = null;
@@ -265,11 +245,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
         catAnim.SetBool("IsAttacking", false);
         isAttacking = false;
 
-        //if(alertSpriteRenderer != null)
-        //{
-        //    alertSpriteRenderer.enabled = false;
-        //    fovLight.color = nonSuspiciousColorFOV;
-        //}
         targetObjectManager.isAttacked = false;
     }
 
@@ -290,11 +265,6 @@ public class Cat : BasicNPCBehaviour, IPatrol
                 catAnim.SetBool("IsAttacking", false);
                 catAnim.SetBool("IsCaught", true);
                 cage = collision.gameObject;
-                //if (alertSpriteRenderer != null)
-                //{
-                //    alertSpriteRenderer.enabled = false;
-                //    fovLight.color = nonSuspiciousColorFOV;
-                //}
             }            
         }
     }
@@ -310,19 +280,19 @@ public class Cat : BasicNPCBehaviour, IPatrol
     public override void ResetInitialState()
     {
         base.ResetInitialState();
+        patrolCoroutine = null;
         isHunting = false;
         isAttacking = false;
-        isPatrolling = false;
         nextPatrolPoint = initialPatrolPoint;
+        indexPatrolPoints = 0;
         canMove = true;
         fovLight.enabled = true;
-        indexPatrolPoints = 0;
+        
         if(cage != null)
         {
             Animator cageAnimator = cage.GetComponentInParent<Animator>();
             cageAnimator.SetBool("CloseCage", false);
             cageAnimator.Play("Idle", -1, 0f);
-
         }
 
         catAnim.SetBool("IsAttacking", false);
@@ -332,9 +302,5 @@ public class Cat : BasicNPCBehaviour, IPatrol
         isNormalCat = true;
         catSlapEvent.Stop(gameObject);
         catSoundsEvent.Post(gameObject);
-
-        //fovLight.color = nonSuspiciousColorFOV;
-
-
     }
 }

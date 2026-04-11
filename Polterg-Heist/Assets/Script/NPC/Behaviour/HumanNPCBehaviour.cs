@@ -168,20 +168,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         return false;
     }
 
-    // Verifiy if the object is toutched by a light
-    protected bool IsObjectLit(Collider2D objCollider)
-    {
-        Collider2D[] lights = Physics2D.OverlapCircleAll(objCollider.bounds.center, detectionRadiusLight, lightLayer);
-        foreach(Collider2D lightCollider in lights)
-        {
-            if(LightUtility.IsPointHitByLight(lightCollider, objCollider, wallFloorLayer))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     // Verifiy if any parts of the object is in the field of view
     protected bool IsPointInFieldOfView(Vector2[] colliderPoints, Collider2D objectCollider)
     {
@@ -220,6 +206,20 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
                 objectSprite.sortingLayerID = visibleLayerID;
             }
             return true;
+        }
+        return false;
+    }
+
+    // Verifiy if the object is toutched by a light
+    protected bool IsObjectLit(Collider2D objCollider)
+    {
+        Collider2D[] lights = Physics2D.OverlapCircleAll(objCollider.bounds.center, detectionRadiusLight, lightLayer);
+        foreach (Collider2D lightCollider in lights)
+        {
+            if (LightUtility.IsPointHitByLight(lightCollider, objCollider, wallFloorLayer))
+            {
+                return true;
+            }
         }
         return false;
     }

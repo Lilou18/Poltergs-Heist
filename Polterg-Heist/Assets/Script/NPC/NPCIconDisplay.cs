@@ -10,8 +10,8 @@ public class NPCIconDisplay : MonoBehaviour
     [SerializeField] protected Sprite investigationIcon;
     [SerializeField] protected Sprite alertIcon;
 
-    [SerializeField] protected Color nonSuspiciousColorFOV;//"00FF1A" OU Cat: FF00D4
-    [SerializeField] protected Color alertColorFOV;//FF0400
+    [SerializeField] protected Color nonSuspiciousColorFOV;
+    [SerializeField] protected Color alertColorFOV;
 
     private void Awake()
     {
