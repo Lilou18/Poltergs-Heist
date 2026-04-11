@@ -55,6 +55,8 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         animator = GetComponentInChildren<Animator>();
         currentPoint = null;
 
+        soundController.AddNonSuspiciousSoundConditions(() => !IsBlocked);
+
         if (patrolPoints.Length > 0)
         {
             nextPatrolPoint = patrolPoints[indexPatrolPoints];
@@ -73,7 +75,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             && !IsRoomBlocked(currentPoint))
         {
             npcLockedSoundEvent.Stop(gameObject);
-            StopNonSuspiciousSound();
+            //StopNonSuspiciousSound();
             StartCoroutine(GetUnstuck());
             return;
         }
@@ -86,11 +88,11 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             patrolCoroutine = StartCoroutine(Patrol());
         }
 
-        if ((!CanPlayNonSuspiciousSound() || investigationController.IsInvestigating)
-            && isNonSuspiciousSoundPlaying)
-        {
-            StopNonSuspiciousSound();
-        }
+        //if ((!CanPlayNonSuspiciousSound() || investigationController.IsInvestigating)
+        //    && isNonSuspiciousSoundPlaying)
+        //{
+        //    StopNonSuspiciousSound();
+        //}
     }
 
     protected override void UpdateIconDisplay()
@@ -105,10 +107,10 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
     }
 
     // Override to add patrolling-specific conditions
-    protected override bool CanPlayNonSuspiciousSound()
-    {
-        return base.CanPlayNonSuspiciousSound() && !IsBlocked;
-    }
+    //protected override bool CanPlayNonSuspiciousSound()
+    //{
+    //    return base.CanPlayNonSuspiciousSound() && !IsBlocked;
+    //}
 
     public IEnumerator ReturnRightFloor()
     {
@@ -231,7 +233,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
                 }
                 else
                 {
-                    StopNonSuspiciousSound();
+                    //StopNonSuspiciousSound();
                     npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
                     CurrentState = PatrollingNPCState.Blocked;
                     yield break;
@@ -244,7 +246,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             }
             else if (IsInRoom && IsRoomBlocked(point))
             {
-                StopNonSuspiciousSound();
+                //StopNonSuspiciousSound();
                 npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
                 CurrentState = PatrollingNPCState.Blocked;
                 yield break;
@@ -281,7 +283,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         // Animation of NPC coming out of the room
         CurrentState = PatrollingNPCState.WaitingAtPoint;
 
-        StopNonSuspiciousSound();
+        //StopNonSuspiciousSound();
 
         animator.SetTrigger("ExitRoom");
         yield return new WaitForSeconds(0.5f);
@@ -290,10 +292,11 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         animator.SetBool("EnterRoom", false);
         CurrentState = PatrollingNPCState.Idle;
 
-        if (CanPlayNonSuspiciousSound())
-        {
-            StartNonSuspiciousSound();
-        }
+        //if (CanPlayNonSuspiciousSound())
+        //{
+        //    StartNonSuspiciousSound();
+        //}
+        soundController.TryPlayNonSuspiciousSound();
         // After getting unstuck, move to the next patrol point
         MoveToNextAvailablePatrolPoint();
     }
@@ -315,9 +318,9 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         CurrentState = PatrollingNPCState.Idle;
 
         // Reset the ambient sound after resetting other state
-        StopNonSuspiciousSound();
-        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
-        isNonSuspiciousSoundPlaying = false;
+        //StopNonSuspiciousSound();
+        //lastSuspiciousTime = -nonSuspiciousSoundCooldown;
+        //isNonSuspiciousSoundPlaying = false;
         if (initialPatrolPoint != null)
         {
             nextPatrolPoint = initialPatrolPoint;

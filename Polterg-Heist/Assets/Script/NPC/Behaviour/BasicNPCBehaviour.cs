@@ -26,7 +26,7 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
     protected NPCMovementController npcMovementController;
     protected SpriteRenderer npcSpriteRenderer;
     protected Animator npcAnim;
-    protected Animator npcAnimMouth;
+    //protected Animator npcAnimMouth;
 
 
 
@@ -68,7 +68,7 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
         else 
         {
             npcAnim = GetComponentInChildren<Animator>();
-            npcAnimMouth = npcAnim.transform.GetChild(0).GetComponentInChildren<Animator>();
+            //npcAnimMouth = npcAnim.transform.GetChild(0).GetComponentInChildren<Animator>();
 
         }
 

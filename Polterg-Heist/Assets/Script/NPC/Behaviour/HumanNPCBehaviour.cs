@@ -21,19 +21,8 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     protected GameObject player;
 
     [Header("NPC sound variables")]
-    [SerializeField] protected AK.Wwise.Event curiousNPCSoundEvent;
-    [SerializeField] protected AK.Wwise.Event nonSuspiciousSoundEvent;
-    [SerializeField] protected float soundCooldown = 1.5f;  // Cooldown between sound of surprise
-    protected float lastSoundTime;
-    protected GameObject lastMovingObject;
-    protected bool soundHasPlayed;
-
-    protected float nonSuspiciousSoundCooldown = 0f;//3f;  // Cooldown before restarting ambient sound
-    protected float lastSuspiciousTime;  // Last time something suspicious happened
-    protected bool isNonSuspiciousSoundPlaying = false;  // Is the ambient sound currently playing
-    protected Coroutine nonSuspiciousSoundCoroutine = null;
-
-
+    protected HumanNPCSoundController soundController;
+    
     [Header("Investigation Variables")]
     [SerializeField] protected Sprite investigationIcon;
     protected NPCInvestigationController investigationController;
@@ -57,22 +46,26 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     {
         base.Start();
         player = GameObject.FindWithTag("Player");
-        audioSource = GetComponent<AudioSource>();        
+        audioSource = GetComponent<AudioSource>();   
+        soundController = GetComponent<HumanNPCSoundController>();
+        investigationController = GetComponent<NPCInvestigationController>();
         canSee = true;
 
         // Initialize sound tracking variables
-        lastMovingObject = null;
-        soundHasPlayed = false;
-        lastSoundTime = -soundCooldown;
-        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
+        soundController.InitializeNonSuspiciousSoundConditions(() => 
+        !isObjectMoving &&
+        !investigationController.IsInvestigating &&
+        investigationController.QueueCount == 0 &&
+        !seePolterg);
 
         visibleLayerID = SortingLayer.NameToID(visibleLayer);
         notVisibleLayerID = SortingLayer.NameToID(notVisibleLayer);
 
-        investigationController = GetComponent<NPCInvestigationController>();
 
-        investigationController.OnInvestigationStarted += HandleInvestigationStarted;
-        investigationController.OnInvestigationEnded += HandleInvestigationEnded;
+
+        
+        investigationController.OnInvestigationStarted += soundController.OnInvestigationStarted;
+        investigationController.OnInvestigationEnded += soundController.OnInvestigationEnded;
     }
 
     //private Coroutine returnToInitialPositionCoroutine;
@@ -83,44 +76,26 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         UpdateIconDisplay();
 
         CheckMirrorReflection();
-
-        // If investigation started or we see the poltergeist, stop non suspicious sound
-        if ((investigationController.IsInvestigating || investigationController.QueueCount > 0 || seePolterg) && isNonSuspiciousSoundPlaying)
-        {
-            StopNonSuspiciousSound();
-        }
     }
 
     protected override void OnDetectionResult(DetectionResult result)
     {
-        if (!result.foundMovingObject && lastMovingObject != null)
-            soundHasPlayed = false;
-
-        if (result.foundMovingObject && !result.wasAlreadyMoving)
-            StopNonSuspiciousSound();
-
-        if (result.foundMovingObject)
-            HandleSoundEvent(result.movingObject);
+        if (!result.foundMovingObject)
+        {
+            soundController.OnObjectMovingStopped();
+        }
+        else if (!result.wasAlreadyMoving)
+        {
+            soundController.OnObjectMovingStarted(result.movingObject);
+        }
+        else
+        {
+            soundController.OnSameObjectStillMoving(result.movingObject);
+        }
 
         HandleMovementSuspicion(result.objectSize);
         //HandleChangedPositionSuspicion(result.movingObject.GetComponent<PossessionController>(),result.objectSize);
     }
-
-    // Investigation callback
-    private void HandleInvestigationStarted()
-    {
-        StopNonSuspiciousSound();
-        curiousNPCSoundEvent.Post(gameObject);
-    }
-
-    private void HandleInvestigationEnded()
-    {
-        lastSuspiciousTime = Time.time;
-
-        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-            StartNonSuspiciousSound();
-    }
-
     public virtual void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
     {
         investigationController.EnqueueSoundInvestigation(objectsound, replaceObject, targetFloor);
@@ -222,93 +197,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         }
     }
 
-    // Manage the sound made by the NPC when he sees an object moving
-    protected virtual void HandleSoundEvent(GameObject currentMovingObject)
-    {
-        // Check if we are past the cooldown
-        bool cooldownElapsed = (Time.time - lastSoundTime) >= soundCooldown;
-
-        // If it's a different object than the last one we tracked, play the sound
-        if (lastMovingObject != currentMovingObject)
-        {
-            surpriseSoundEvent.Post(gameObject);
-            npcAnimMouth.SetTrigger("IsSurprised");
-            lastMovingObject = currentMovingObject;
-            soundHasPlayed = true;
-            lastSoundTime = Time.time;
-        }
-        // If it's the same object but it had stopped and started again, play the sound
-        else if (lastMovingObject == currentMovingObject && !soundHasPlayed && cooldownElapsed)
-        {
-            surpriseSoundEvent.Post(gameObject);
-            npcAnimMouth.SetTrigger("IsSurprised");
-            soundHasPlayed = true;
-            lastSoundTime = Time.time;
-        }
-        // Otherwise, it's the same object still moving, so don't play the sound again
-    }
-
-    protected virtual void StartNonSuspiciousSound()
-    {
-        if (nonSuspiciousSoundCoroutine != null)
-        {
-            return;
-        }
-        nonSuspiciousSoundCoroutine = StartCoroutine(PlayNonSuspiciousSound());
-    }
-
-    protected virtual IEnumerator PlayNonSuspiciousSound()
-    {
-        // Wait for the cooldown period
-        float timeToWait = Mathf.Max(0, (lastSuspiciousTime + nonSuspiciousSoundCooldown) - Time.time);
-        if (timeToWait > 0)
-        {
-            yield return new WaitForSeconds(timeToWait);
-        }
-
-        // Check if we should still play the sound (nothing happened during the waiting time)
-        if (CanPlayNonSuspiciousSound())
-        {
-            if (nonSuspiciousSoundEvent != null)
-            {
-                nonSuspiciousSoundEvent.Post(gameObject);
-            }
-            isNonSuspiciousSoundPlaying = true;
-        }
-        else
-        {
-            nonSuspiciousSoundCoroutine = null;
-        }
-
-
-    }
-
-    protected virtual void StopNonSuspiciousSound()
-    {
-        if (isNonSuspiciousSoundPlaying && nonSuspiciousSoundEvent != null)
-        {
-            nonSuspiciousSoundEvent.Stop(gameObject);
-            isNonSuspiciousSoundPlaying = false;
-        }
-
-        if (nonSuspiciousSoundCoroutine != null)
-        {
-            StopCoroutine(nonSuspiciousSoundCoroutine);
-            nonSuspiciousSoundCoroutine = null;
-        }
-
-        lastSuspiciousTime = Time.time;
-    }
-
-    protected virtual bool CanPlayNonSuspiciousSound()
-    {
-        bool baseConditions = !isObjectMoving;
-
-        bool notInvestigating = !investigationController.IsInvestigating && investigationController.QueueCount == 0;
-        bool notSeeingReflection = !seePolterg;
-
-        return baseConditions && notInvestigating && notSeeingReflection;
-    }
 
     // Verify if the object is in the field of view of the NPC
     protected override bool IsObjectInFieldOfView(Collider2D obj)
@@ -402,10 +290,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
                     // If nothing is blocking the sight of the NPC to the reflection of the player
                     if (!mirror.IsMirrorReflectionBlocked(reflectionPoints, playerCollider) && !seePolterg)
                     {
-                        if (isNonSuspiciousSoundPlaying)
-                        {
-                            StopNonSuspiciousSound();
-                        }
                         playerCollider.gameObject.GetComponent<MovementController>().canMove = false;
                         NPCSeePolterg();
                     }
@@ -419,9 +303,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     protected void NPCSeePolterg()
     {
         seePolterg = true;
-        audioSource.Play();
-        surpriseSoundEvent.Post(gameObject);
-        npcAnimMouth.SetTrigger("IsSurprised");
+        soundController.OnPoltergSeen();
 
         if(alertSpriteRenderer != null)
         {
@@ -439,6 +321,7 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         StopAllCoroutines();
 
         investigationController.ResetState();
+        soundController.Reset();
 
         canSee = true;
         seePolterg = false;
@@ -451,20 +334,10 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
             alertSpriteRenderer.enabled = false;
         }
         fovLight.color = nonSuspiciousColorFOV;
-        // Reset sounds
-        if (nonSuspiciousSoundEvent != null)
-        {
-            nonSuspiciousSoundEvent.Stop(gameObject);
-        }
-
-        lastMovingObject = null;
-        soundHasPlayed = false;
-        StopNonSuspiciousSound();
-        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
-        isNonSuspiciousSoundPlaying = false;
+        
 
         npcAnim.SetBool("InMovement", false);
-        npcAnimMouth.SetBool("IsSurprised", false);
+
         npcMovementController.Reset();
         fovLight.color = nonSuspiciousColorFOV;
     }
@@ -476,8 +349,8 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
 
     private void OnDisable()
     {
-        investigationController.OnInvestigationStarted -= HandleInvestigationStarted;
-        investigationController.OnInvestigationEnded -= HandleInvestigationEnded;
+        investigationController.OnInvestigationStarted -= soundController.OnInvestigationStarted;
+        investigationController.OnInvestigationEnded -= soundController.OnInvestigationEnded;
     }
 
     private void OnDrawGizmos()

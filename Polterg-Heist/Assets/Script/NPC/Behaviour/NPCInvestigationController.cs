@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(NPCMovementController))]
-[RequireComponent(typeof(BasicNPCBehaviour))]
+[RequireComponent(typeof(HumanNPCBehaviour))]
 public class NPCInvestigationController : MonoBehaviour
 {
     [Header("Investigation variables")]
