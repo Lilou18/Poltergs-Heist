@@ -290,6 +290,15 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         investigationController.EnqueueInvestigation(investigation);
     }
 
+    // Return the NPC to it's initial position and facing direction after the end of an investigation
+    public virtual IEnumerator ReturnToInitialPosition()
+    {
+        yield return npcMovementController.ReachTarget(
+            initialPosition,
+            currentFloorLevel,
+            initialFloorLevel);
+        SetFacingDirection(initialFacingRight);
+    }
 
 
     // Sound

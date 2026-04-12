@@ -19,6 +19,8 @@ public enum PatrollingNPCState
     Investigating,
     Returning
 }
+
+[RequireComponent(typeof(PatrollingNPCInvestigationController))]
 public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialState
 {
     [Header("Patrolling NPC Sound Variables")]
