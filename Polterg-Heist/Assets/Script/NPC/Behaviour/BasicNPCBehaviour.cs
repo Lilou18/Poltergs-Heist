@@ -50,13 +50,15 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
     public bool FacingRight {  get { return facingRight; } set { facingRight = value; } }
     public bool IniFacingRight { get { return initialFacingRight; } }
 
+    protected void Awake()
+    {
+        npcSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+    }
     protected virtual void Start()
     {
         fieldOfViewAngle = 180f;
         isCurrentlyObserving = false;
         isObjectMoving = false;
-
-        npcSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
 
         npcMovementController = GetComponent<NPCMovementController>();
 

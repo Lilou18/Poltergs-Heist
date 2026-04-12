@@ -118,7 +118,7 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
             StopCoroutine(patrolCoroutine);
             patrolCoroutine = null;
         }
-        npcMovementController.StopMovement(); // au lieu de Reset()
+        npcMovementController.StopMovement();
     }
 
     // Check if there is a possessed object in front of a room

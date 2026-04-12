@@ -3,12 +3,14 @@ using UnityEngine;
 
 public class FloorNavigation : MonoBehaviour
 {
-    // Pathfinding for our Human NPC
+    // Handles floor to floor navigation for NPCs using a stair based system.
+    // In this system, stairs are treated as navigation nodes connecting floors.
+    // Each StairController links to another stair on a different floor (UpperFloor / BottomFloor).
 
-    [SerializeField] private LayerMask stairLayer;
-    // Dictionaries of all staircases ordered by floor
+    // Dictionary storing all stairs grouped by floor level
     private Dictionary<float, List<StairController>> stairsByFloorLevel = new Dictionary<float, List<StairController>>();
 
+    // Getter
     public Dictionary<float, List<StairController>> StairsByFloorLevel => stairsByFloorLevel;
 
     // Singleton pattern
@@ -25,40 +27,45 @@ public class FloorNavigation : MonoBehaviour
         {
             Destroy(this.gameObject);
         }
-        //listAllStairs();
     }
     private void Start()
     {
-        listAllStairs();
+        ListAllStairs();
     }
 
-    
-    // List all stairs in the scene and ordered them by floor level
-    private void listAllStairs()
+
+    // Finds all StairController instances in the scene
+    // and groups them by floor level for fast lookup during navigation.
+    private void ListAllStairs()
     {
-        StairController[] allStairs = FindObjectsByType<StairController>(FindObjectsSortMode.None); // Find all the stairs in the level
+        // Find all the stairs in the level
+        StairController[] allStairs = FindObjectsByType<StairController>(FindObjectsSortMode.None);
         
         foreach (StairController stair in allStairs)
         {
             float floorLevel = stair.FloorLevel;
 
+            // Create list for this floor if it doesn't exist
             if (!stairsByFloorLevel.ContainsKey(floorLevel))
             {
                 stairsByFloorLevel[floorLevel] = new List<StairController>();
             }
             
-            stairsByFloorLevel[floorLevel].Add(stair);
-            
+            stairsByFloorLevel[floorLevel].Add(stair);            
         }
     }
 
-    // Find the closest staircase and on the same floor as the npc.
+    // Finds the closest usable stair on the current floor that moves the NPC toward the target floor.
+    // 1. Filter stairs on the current floor
+    // 2. Exclude already tried stairs (to avoid loops)
+    // 3. Keep only stairs that go in the required direction (up/down)
+    // 4. Check size constraints (NPC must fit)
+    // 5. Return the closest valid stair
     public StairController FindNearestStairToFloor(FloorNavigationRequest floorRequest, StairDirection neededDirection, List<StairController> excludeStairs)
     {
         float currentFloor = floorRequest.CurrentFloorLevel;
         float targetFloor = floorRequest.TargetFloorLevel;
-        //print("CURRENT FLOOR " + currentFloor);
-        //print("TARGET FLOOR " + targetFloor);
+
         // If we're already on the right floor, no stairs needed
         if (currentFloor == targetFloor)
         {
@@ -67,7 +74,6 @@ public class FloorNavigation : MonoBehaviour
 
         if (!stairsByFloorLevel.ContainsKey(currentFloor))
         {
-            print("GROSSE ERREUR");
             // No stairs found on current floor level
             return null;
         }
@@ -78,10 +84,6 @@ public class FloorNavigation : MonoBehaviour
         // Find an available stair that leads to the targeted floor level
         foreach (StairController stair in stairsByFloorLevel[currentFloor])
         {
-            if(currentFloor == 5)
-            {
-                print("TEST STAIR");
-            }
             // Skip this stair if it's in the exclude list
             if (excludeStairs != null && excludeStairs.Contains(stair))
             {
@@ -111,14 +113,12 @@ public class FloorNavigation : MonoBehaviour
                 }
             }
         }
-        if(closestStair != null)
-        {
-            //print(closestStair.gameObject.name);
-        }
+        
         return closestStair;
     }
 
-    // Check if the NPC can use this stair
+    // Ensures the NPC can physically use the stair based on its size.
+    // Prevents NPC from using small stair passages.
     private bool CanNPCUseStair(StairController stair, FloorNavigationRequest floorRequest)
     {
         Renderer npcRenderer = floorRequest.ObjectRenderer;
@@ -126,13 +126,14 @@ public class FloorNavigation : MonoBehaviour
         return npcRenderer.bounds.size.x <= stair.MaximumWidth && npcRenderer.bounds.size.y <= stair.MaximumHeight;
     }
 
-    // Find all the stairs the NPC must used to go to the targeted floor
+    // Find all the stairs the NPC must used to reach the target floor
+    // A safety counter prevents infinite loops in malformed setups in the level
     public List<StairController> FindPathToFloor(FloorNavigationRequest floorRequest)
     {
         int safetyCounter = 100;
         List<StairController> path = new List<StairController>();   // List of all the stairs the NPC must used
-        float currentFloor = floorRequest.CurrentFloorLevel;    // Floor level where the NPC is
-        float targetFloor = floorRequest.TargetFloorLevel;
+        float currentFloor = floorRequest.CurrentFloorLevel;        // Floor level where the NPC is
+        float targetFloor = floorRequest.TargetFloorLevel;          // Floor level we want to reach
         
         // As long as the NPC is not on the desired floor
         while(currentFloor != targetFloor && safetyCounter > 0)
@@ -140,32 +141,27 @@ public class FloorNavigation : MonoBehaviour
             safetyCounter--;
             if (safetyCounter == 0)
             {
-                Debug.LogError("Boucle infinie détectée dans FindPathToFloor !");
+                Debug.LogError("Infinite loop detected in FindPathToFloor!");
                 return null;
             }
-            // Determine if we need to go up or down
+
+            // Determine movement direction based on target floor
             StairDirection direction = (targetFloor > currentFloor) ? StairDirection.Upward : StairDirection.Downward;
-            //print("CHECKING");
-            //print(direction);
-            //print(targetFloor);
-            //print(currentFloor);
+
             // Find the nearest stair to used to go to the targeted floor
             StairController nextStair = FindNearestStairToFloor(floorRequest, direction, null);
 
-            // If there is no path for the NPC
+            // No path found for the NPC
             if(nextStair == null)
             {
-                print("cant find path");
+                Debug.Log("No path found to target floor.");
                 return null;
-                // Can't find a path
-                //break;
             }
             // Add the found staircase to the list the NPC must used
             path.Add(nextStair);
 
-            //print(nextStair.gameObject.name);
-            // Update floor level of the NPC
-            if(direction == StairDirection.Upward && nextStair.UpperFloor != null)
+            // After finding a stair, update the current floor
+            if (direction == StairDirection.Upward && nextStair.UpperFloor != null)
             {
                 currentFloor = nextStair.UpperFloor.FloorLevel;   
                 floorRequest.CurrentFloorLevel = currentFloor;
@@ -185,10 +181,10 @@ public class FloorNavigation : MonoBehaviour
 // Simple struct to pass navigation request data
 public struct FloorNavigationRequest
 {
-    public Vector2 Position;
-    public float CurrentFloorLevel;
-    public float TargetFloorLevel;
-    public Renderer ObjectRenderer;
+    public Vector2 Position;                // NPC world position
+    public float CurrentFloorLevel;         // NPC current floor
+    public float TargetFloorLevel;          // Desired floor to reach
+    public Renderer ObjectRenderer;         // Used for size constraint checks
 
     public FloorNavigationRequest(Vector2 position, float currentFloorLevel, float targetFloorLevel, Renderer renderer)
     {
