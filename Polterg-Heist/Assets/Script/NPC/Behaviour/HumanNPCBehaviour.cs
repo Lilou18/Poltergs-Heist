@@ -16,7 +16,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     // - Investigation delegation to NPCInvestigationController
 
     [Header("Suspicion variables")]
-    // Variable manage suspicion of the NPC
     [SerializeField] protected float minSuspiciousRotation;         // Minimum rotation change in degrees to trigger displacement suspicion
     [SerializeField] protected float minSuspiciousPosition;         // Minimum position change to trigger displacement suspicion
 
@@ -75,25 +74,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         base.Update();
 
         CheckMirrorReflection();
-    }
-
-    private bool isNonSuspicious()
-    {
-        return !isObjectMoving &&
-               !investigationController.IsInvestigating &&
-               investigationController.QueueCount == 0 &&
-               !hasSeenPolterg;
-    }
-
-    // Returns the icon state to display above the NPC based on current game state.
-    protected override IconState GetIconState()
-    {
-        if (hasSeenPolterg) return IconState.Alert;
-        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease) return IconState.None;
-        if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0) return IconState.Alert;
-        if (investigationController.HasActiveInvestigation || investigationController.QueueCount > 0) return IconState.Investigation;
-             
-        return IconState.None;
     }
 
     // Detection
@@ -308,7 +288,33 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
     public void EnqueueInvestigation(IEnumerator investigation)
     {
         investigationController.EnqueueInvestigation(investigation);
-    }    
+    }
+
+
+
+    // Sound
+
+    // Return whether everything is normal for the NPC to sound non suspicious based on current game state.
+    private bool isNonSuspicious()
+    {
+        return !isObjectMoving &&
+               !investigationController.IsInvestigating &&
+               investigationController.QueueCount == 0 &&
+               !hasSeenPolterg;
+    }
+
+    // Display Icon
+
+    // Returns the icon state to display above the NPC based on current game state.
+    protected override IconState GetIconState()
+    {
+        if (hasSeenPolterg) return IconState.Alert;
+        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease) return IconState.None;
+        if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0) return IconState.Alert;
+        if (investigationController.HasActiveInvestigation || investigationController.QueueCount > 0) return IconState.Investigation;
+
+        return IconState.None;
+    }
 
     // Reset
     public override void ResetInitialState()
