@@ -56,7 +56,7 @@ public class NPCMovementController : MonoBehaviour
         // The NPC is now on the same floor level has the target
         // Step 2: Move horizontally to the target on the correct floor
         Vector2 destination = new Vector2(target.x, transform.position.y);        
-        UpdateSpriteDirection(destination);                                 // Flip sprite based on direction
+        UpdateFacingDirection(destination);
         yield return HorizontalMovementToTarget(destination);
     }
 
@@ -90,8 +90,8 @@ public class NPCMovementController : MonoBehaviour
                 StairController nextStairFloor = upward ? currentStair.UpperFloor : currentStair.BottomFloor;
 
                 // Walk to the stair entrance
-                Vector2 stairPosition = new Vector2(currentStair.StartPoint.position.x, transform.position.y);
-                UpdateSpriteDirection(stairPosition);
+                Vector2 stairPosition = new Vector2(currentStair.StartPoint.position.x, transform.position.y);                
+                UpdateFacingDirection(stairPosition);
                 yield return HorizontalMovementToTarget(stairPosition);
 
                 // If the stair or its linked stair on the other floor is blocked, the NPC searches for another stair on the same floor
@@ -122,8 +122,8 @@ public class NPCMovementController : MonoBehaviour
                             if (!alternativeStair.IsStairBlocked() && nextStairFloor != null && !nextStairFloor.IsStairBlocked())
                             {
                                 // NPC walk to the alternative stair found
-                                Vector2 alternativeStairPosition = new Vector2(alternativeStair.StartPoint.position.x, transform.position.y);            
-                                UpdateSpriteDirection(alternativeStairPosition);                                
+                                Vector2 alternativeStairPosition = new Vector2(alternativeStair.StartPoint.position.x, transform.position.y);                                                               
+                                UpdateFacingDirection(alternativeStairPosition);
                                 yield return HorizontalMovementToTarget(alternativeStairPosition);
 
                                 // Once the NPC reaches the alternative stair, check if they have become blocked in the meantime
@@ -189,25 +189,12 @@ public class NPCMovementController : MonoBehaviour
 
     }
 
-    // Updates the NPC sprite to face the given destination.
-    // Also updates the field fo view direction.
-    private void UpdateSpriteDirection(Vector2 destination)
+    // Set NPC orientation based on movement direction.
+    private void UpdateFacingDirection(Vector2 destination)
     {
-        // Flip sprite based on direction
-        Vector2 npcDirection = (destination - (Vector2)transform.position).normalized;
-        bool faceRight = npcDirection.x >= 0;
-
-        if (faceRight != npc.FacingRight)
-        {
-            // Sprite face the right direction
-            if (GetComponentInChildren<NPCSpriteManager>() == null)
-            {
-                npcSpriteRenderer.flipX = !faceRight;
-            }
-
-            npc.FacingRight = faceRight;
-            npc.FlipFieldOfView();
-        }
+        Vector2 direction = (destination - (Vector2)transform.position).normalized;
+        bool faceRight = direction.x >= 0;
+        npc.SetFacingDirection(faceRight);
     }
 
     // Moves the NPC horizontally toward the target one frame at a time.

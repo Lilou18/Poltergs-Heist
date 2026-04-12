@@ -167,11 +167,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
                     // Only update facing if the object is actually moving horizontally
                     if (possessionController.IsMoving)
                     {
-                        if (faceRight != FacingRight)
-                        {
-                            FacingRight = faceRight;
-                            FlipFieldOfView();
-                        }
+                        SetFacingDirection(faceRight);
                     }
                 }
             }
@@ -181,13 +177,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
                 Vector3 destination = new Vector3(objectPosition.x, transform.position.y, objectPosition.z);
                 Vector2 direction = (new Vector2(destination.x, destination.y) - (Vector2)transform.position).normalized;
                 bool faceRight = direction.x >= 0;
-
-                // Flip sprite based on direction
-                if (faceRight != FacingRight)
-                {                   
-                    FacingRight = faceRight;
-                    FlipFieldOfView();
-                }
+                SetFacingDirection(faceRight);
             }
 
             // Cat is running towards the object target            

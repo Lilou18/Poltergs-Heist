@@ -112,11 +112,7 @@ public class NPCInvestigationController : MonoBehaviour
             npcBehaviour.InitialFloorLevel));
 
         // Restore initial facing direction
-        if (npcBehaviour.FacingRight != npcBehaviour.IniFacingRight)
-        {
-            npcBehaviour.FacingRight = npcBehaviour.IniFacingRight;
-            npcBehaviour.FlipFieldOfView();
-        }
+        npcBehaviour.SetFacingDirection(npcBehaviour.InitialFacingRight);
     }
 
     public virtual void ResetState()
