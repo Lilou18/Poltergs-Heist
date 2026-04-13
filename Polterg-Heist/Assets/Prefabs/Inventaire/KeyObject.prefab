@@ -207,7 +207,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6a3e67a7e45cbd47b481e03e4eccfe1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  keyPickUpSound:
-    idInternal: 0
+  PickUpSoundsEvents:
+  - idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: d9a30601dd4fed44bafd0bde8b5bd822, type: 2}
+  itemType: 0

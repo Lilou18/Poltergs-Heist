@@ -2201,9 +2201,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44e5ffd94fbc74d409881d74fe7c92fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  stairLayer:
-    serializedVersion: 2
-    m_Bits: 2048
 --- !u!114 &8500973661482367807
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2217,7 +2214,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   resetAll: 0
-  resetGameObject: []
+  resetPossessedGameObject: []
 --- !u!114 &3384594651823311190
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3057,7 +3054,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5166093064252932047}
-  - component: {fileID: 6977982836352917785}
   - component: {fileID: 8890012068865440643}
   m_Layer: 5
   m_Name: Inventory
@@ -3087,45 +3083,6 @@ RectTransform:
   m_AnchoredPosition: {x: -0.00047302, y: -0.00035715}
   m_SizeDelta: {x: 800, y: 449.82}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &6977982836352917785
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5678961863623572098}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5ba96d620cef3c445959764d93f5cbaa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Ctrl:
-    m_Name: Ctrl
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 0c0aee05-29b9-47eb-8047-1ce64cb70768
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  FullEnergy:
-    m_Name: Full Energy
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 82e23a38-1fb6-4ad6-a8cd-abdf3ac8aaa6
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
-  MinEnergy:
-    m_Name: Min Energy
-    m_Type: 0
-    m_ExpectedControlType: 
-    m_Id: 61be3866-2434-49c7-8729-7e77d08c54be
-    m_Processors: 
-    m_Interactions: 
-    m_SingletonActionBindings: []
-    m_Flags: 0
 --- !u!114 &8890012068865440643
 MonoBehaviour:
   m_ObjectHideFlags: 0

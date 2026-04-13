@@ -13,14 +13,9 @@ public class InventoryUI : MonoBehaviour
     // - Collected item bar: shows icons for key items the player is currently carrying,
     //   hidden automatically when empty
 
-    public static InventoryUI Instance {  get; private set; }   // Singleton
-
     [SerializeField] private GameObject collectedItemBar;       // Parent container for collected key item icons
     [SerializeField] private GameObject keyUIPrefab;            // Prefab used to display a collected key item icon
     [SerializeField] private GameObject stealableBar;           // Parent container for stealable item silhouettes
-
-    // All stealable items in the scene, sorted by name for consistent display order
-    List<StealableBehavior> stealableItemList = new List<StealableBehavior>();
 
     // Maps each stealable sprite to its UI image.
     // Note: if two different stealable objects share the same sprite, only the first
@@ -28,46 +23,33 @@ public class InventoryUI : MonoBehaviour
     // There is never two identical stealable in the same level.
     Dictionary<Sprite, GameObject> stealableUI = new Dictionary<Sprite, GameObject>();
 
+    // All stealable items in the scene, sorted by name for consistent display order
+    List<PickupItemBehavior> stealableItemList = new List<PickupItemBehavior>();
+
     // Maps each key item to its instantiated UI icon
-    Dictionary<KeyItemBehavior, GameObject> keyUI = new Dictionary<KeyItemBehavior, GameObject>();
+    Dictionary<PickupItemBehavior, GameObject> keyUI = new Dictionary<PickupItemBehavior, GameObject>();
 
-    private void Awake()
-    {
-        if(Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-
-        // List of all stealable item in the level
-        // Sort by name for consistent left-to-right display order in the stealable bar
-        stealableItemList = FindObjectsByType<StealableBehavior>(FindObjectsSortMode.InstanceID).OrderBy(obj => obj.name).ToList<StealableBehavior>();
-    }
+    private InventorySystem inventorySystem;                    // Player inventory
 
     private void Start()
     {
         SetupStealableBarUI();
         // Hide the collected item bar if there are no key items on startup
         collectedItemBar.SetActive(collectedItemBar.transform.childCount > 0);
-
-        // Register to inventory changes event.
-        if (InventorySystem.Instance != null)
-        {
-            InventorySystem.Instance.OnStealableChanged += UpdateStealableBarUI;
-            InventorySystem.Instance.OnKeyItemChanged += UpdateCollectedItemBarUI;
-        }
     }
 
-    // Unregister to inventory changes event.
+    private void OnEnable()
+    {
+        // Register to inventory changes event.
+        InventorySystem.Instance.OnInventoryChanged += HandleInventoryChanged;
+    }
+    
     private void OnDisable()
     {
-        if (InventorySystem.Instance != null)
+        // Unregister to inventory changes event.
+        if (inventorySystem != null)
         {
-            InventorySystem.Instance.OnStealableChanged -= UpdateStealableBarUI;
-            InventorySystem.Instance.OnKeyItemChanged -= UpdateCollectedItemBarUI;
+            inventorySystem.OnInventoryChanged -= HandleInventoryChanged;
         }
     }
 
@@ -75,12 +57,19 @@ public class InventoryUI : MonoBehaviour
     // There is never two identical stealable in the same level.
     private void SetupStealableBarUI()
     {
-        if(stealableItemList.Count == 0)
+        // List of all stealable item in the level
+        // Sort by name for consistent left-to-right display order in the stealable bar
+        stealableItemList = FindObjectsByType<PickupItemBehavior>(FindObjectsSortMode.InstanceID)
+            .Where(i => i.ItemType == PickupItemType.Stealable)
+            .OrderBy(i => i.name)
+            .ToList();
+
+        if (stealableItemList.Count == 0)
         {
             Debug.LogWarning("Stealable list is empty");
         }
 
-        foreach(StealableBehavior stealableItem in stealableItemList)
+        foreach (PickupItemBehavior stealableItem in stealableItemList)
         {
             Sprite sprite = stealableItem.ItemSpriteRenderer.sprite;
 
@@ -100,9 +89,24 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
+    // Update the inventory UI bar based on the type of the item picked up.
+    private void HandleInventoryChanged(PickupItemBehavior item, bool isPickedUp)
+    {
+        switch (item.ItemType)
+        {
+            case PickupItemType.Stealable:
+                UpdateStealableBarUI(item, isPickedUp);
+                break;
+
+            case PickupItemType.Key:
+                UpdateCollectedItemBarUI(item, isPickedUp);
+                break;
+        }
+    }
+
     // Updates the stealable bar icon for the given item.
     // Filled when picked up, black when reset.
-    private void UpdateStealableBarUI(StealableBehavior itemStolen, bool isPickedUp)
+    private void UpdateStealableBarUI(PickupItemBehavior itemStolen, bool isPickedUp)
     {
         Sprite sprite = itemStolen.ItemSpriteRenderer.sprite;
         if (stealableUI.ContainsKey(sprite))
@@ -114,7 +118,7 @@ public class InventoryUI : MonoBehaviour
 
     // Adds or removes a key item icon from the collected item bar.
     // The bar is shown or hidden automatically after the change.
-    private void UpdateCollectedItemBarUI(KeyItemBehavior keyitem, bool isPickedUp)
+    private void UpdateCollectedItemBarUI(PickupItemBehavior keyitem, bool isPickedUp)
     {
         if (isPickedUp)
         {
@@ -133,10 +137,10 @@ public class InventoryUI : MonoBehaviour
             {
                 Destroy(keyUI[keyitem]);
                 keyUI.Remove(keyitem);
-            }           
+            }
         }
         // Wait one frame for Destroy to take effect before checking child count
-        StartCoroutine(CheckCollectedItemBarEmpty());       
+        StartCoroutine(CheckCollectedItemBarEmpty());
     }
 
     // Waits one frame then shows or hides the collected item bar based on whether it has children.

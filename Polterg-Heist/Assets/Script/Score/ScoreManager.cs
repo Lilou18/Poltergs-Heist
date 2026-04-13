@@ -12,7 +12,8 @@ public class ScoreManager : MonoBehaviour
 
 
     public static ScoreManager Instance { get; private set; }   // Singleton
-    ScoreUI scoreUI;                                            // Reference to the UI component that displays the scoreboard
+
+    private ScoreUI scoreUI;                                    // Reference to the UI component that displays the scoreboard
 
     // Tracked Stats
     private int deaths = 0;                                     // Total number of times the player has died in this level

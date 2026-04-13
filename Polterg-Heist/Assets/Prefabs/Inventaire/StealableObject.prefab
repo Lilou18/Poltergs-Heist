@@ -97,7 +97,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6862643657868575749}
   - component: {fileID: 477083557348318394}
-  - component: {fileID: 934290941605839134}
+  - component: {fileID: 3945743837258789752}
   - component: {fileID: 4577982767617669942}
   - component: {fileID: 5347937680042742442}
   - component: {fileID: 6524574064066562033}
@@ -170,7 +170,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &934290941605839134
+--- !u!114 &3945743837258789752
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -179,18 +179,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 6222536157735932460}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 83a5d0212549c914499f570956ac794a, type: 3}
+  m_Script: {fileID: 11500000, guid: cf20cdf2b96ca584583b2c4ebda1cba0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  energyGain: 1
-  objectPickUpSoundEvent:
-    idInternal: 0
+  PickUpSoundsEvents:
+  - idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: 5eaff725df7c6e241ac7c67bc152f066, type: 2}
-  playerYaySoundEvent:
-    idInternal: 0
+  - idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: 7c109ff9b704e5d48b033c74734d3732, type: 2}
+  itemType: 1
 --- !u!114 &4577982767617669942
 MonoBehaviour:
   m_ObjectHideFlags: 0
