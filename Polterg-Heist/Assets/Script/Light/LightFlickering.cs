@@ -4,49 +4,56 @@ using UnityEngine.Rendering.Universal;
 
 public class LightFlickering : MonoBehaviour
 {
-    [Header("Light variables")]
-    [SerializeField] float delayBeforeLightOn;  // Delay before the light turns on
-    [SerializeField] float lightDuration;   // Length of time the light is on
-    [SerializeField] float lightOffDuration;    // Length of time the light is off
+    // Handles a looping flickering light behavior.
+    // The light alternates between ON and OFF states using configurable durations.
+    
+    [Header("Light Timing")]
+    [SerializeField] float delayBeforeLightOn;  // Initial delay before the flickering starts
+    [SerializeField] float lightDuration;       // Duration the light stays On
+    [SerializeField] float lightOffDuration;    // Duration the light stays Off
     Light2D lightSource;
 
-    private void Start()
+    private Coroutine flickerRoutine;           // FlickeringLightLoop coroutine reference
+
+    private void Awake()
     {
         lightSource = GetComponent<Light2D>();
-        lightSource.enabled = false;
-        StartCoroutine(WaitingStart());
     }
 
-    private void Update()
-    {
-        
-    }
-
+    // Called when the object becomes enabled.
+    // Starts the flickering loop.
     private void OnEnable()
     {
-        StopAllCoroutines();
-        StartCoroutine(WaitingStart());
+        if (lightSource == null) return;
+
+        lightSource.enabled = false;
+        flickerRoutine = StartCoroutine(FlickeringLightLoop());
     }
 
-    private IEnumerator WaitingStart()
+    // Prevent orphan coroutine.
+    private void OnDisable()
+    {
+        if(flickerRoutine != null)
+            StopCoroutine(flickerRoutine);
+    }
+
+    // Behaviour for the flickering flight on a loop.
+    // 1. Wait initial delay
+    // 2. Turn the light On, then wait
+    // 3. Turn the light Off, then wait
+    private IEnumerator FlickeringLightLoop()
     {
         yield return new WaitForSeconds(delayBeforeLightOn);
-        StartCoroutine(ToggleLightOn());
-    }
 
-    private IEnumerator ToggleLightOn()
-    {
-        lightSource.enabled = true;
-        yield return new WaitForSeconds(lightDuration);
-        StartCoroutine(ToggleLightOff());
-    }
-    
-    private IEnumerator ToggleLightOff()
-    {
-        lightSource.enabled = false;
-        yield return new WaitForSeconds(lightOffDuration);
-        StartCoroutine(ToggleLightOn());
-    }
+        while (true)
+        {
+            // Turn On the Light
+            lightSource.enabled = true;
+            yield return new WaitForSeconds(lightDuration);
 
-
+            // Turn Off the light
+            lightSource.enabled = false;
+            yield return new WaitForSeconds(lightOffDuration);
+        }
+    }
 }
