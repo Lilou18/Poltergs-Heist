@@ -3,26 +3,25 @@ using UnityEngine;
 // Different type of patrolling point
 public enum PatrolPointType
 {
-    Normal,
-    Room
+    Normal, // NPC waits briefly then continues patrolling
+    Room    // NPC enters the room, waits inside, exits then continues patrolling
 }
 public class PatrolPointData : MonoBehaviour
 {
-    // This class contains all the data for a patrol point of the NPC
-    private Transform point;   // Destination point of the NPC
-    [SerializeField] private PatrolPointType patrolPointType;   // Type of the destination
-    [SerializeField] private float floorLevel;   // On what floor is this patrol point
-    [SerializeField] private float waitTime;  // Waiting time before going to the next point
-    [SerializeField] private SpriteRenderer spriteRenderer; // Sprite renderer of the room
-    [SerializeField] private float minimumBlockHeight;  // Minimum Height of an object to block a room
-    [SerializeField] private float blockingThreshold;   // How much of the door width needs to be blocked (0.5 = 50%)
-    [SerializeField] private float waitTimeBlocked; // How much time we stay in front of a blocked room
+    // Holds all configuration data for a single NPC patrol destination.    
 
-    private void Start()
-    {
-        point = this.transform;
-    }
-    public Transform Point => point;
+
+    
+    [SerializeField] private PatrolPointType patrolPointType;   // Type of the patrol point (Room or Normal)
+    [SerializeField] private float floorLevel;                  // Floor level of this patrol point
+    [SerializeField] private float waitTime;                    // Time the NPC waits at this point before moving on
+    [SerializeField] private SpriteRenderer spriteRenderer;     // Sprite renderer of the room
+    [SerializeField] private float minimumBlockHeight;          // Minimum height an object must have to count as blocking the entrance
+    [SerializeField] private float blockingThreshold;           // Fraction of entrance width that must be blocked to prevent entry (e.g. 0.5 = 50%)
+    [SerializeField] private float waitTimeBlocked;             // Time the NPC waits in front of a blocked entrance before moving on
+
+    // Getters
+    public Transform Point => transform;
     public PatrolPointType PatrolPointType => patrolPointType;
     public float WaitTime => waitTime;
     public SpriteRenderer SpriteRenderer => spriteRenderer;

@@ -3,7 +3,7 @@ using System.Collections;
 
 public class Cat : BasicNPCBehaviour, IPatrol
 {
-    // Sound variables
+    [Header("Sound Event")]
     [SerializeField] protected AK.Wwise.Event catSlapEvent;
     [SerializeField] protected AK.Wwise.Event catSoundsEvent;
     [SerializeField] protected AK.Wwise.Event cageCloseSoundEvent;
