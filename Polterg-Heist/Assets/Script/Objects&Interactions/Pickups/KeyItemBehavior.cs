@@ -9,15 +9,9 @@ public class KeyItemBehavior : PickupItemBehavior, IResetInitialState
 
     [SerializeField] private AK.Wwise.Event keyPickUpSound;
 
-    protected override void OnTriggerEnter2D(Collider2D collision)
+    protected override void OnItemPickedUpSound()
     {
-        base.OnTriggerEnter2D(collision);
-        PossessionManager possessionManager = collision.GetComponent<PossessionManager>();
-        if (collision.GetComponent<PlayerController>() != null || (possessionManager != null && possessionManager.IsPossessing))
-        {
-            InventorySystem.Instance.AddKeyToInventory(this);
-            keyPickUpSound.Post(gameObject);
-        }
+        keyPickUpSound.Post(gameObject);
     }
 
     // Reset key item to it's inital state
@@ -26,5 +20,4 @@ public class KeyItemBehavior : PickupItemBehavior, IResetInitialState
         base.ResetInitialState();
         InventorySystem.Instance.NotifyKeyReset(this);
     }
-
 }

@@ -52,11 +52,8 @@ public class InventoryUI : MonoBehaviour
         SetupStealableBarUI();
         // Hide the collected item bar if there are no key items on startup
         collectedItemBar.SetActive(collectedItemBar.transform.childCount > 0);
-    }
 
-    // Register to inventory changes event.
-    private void OnEnable()
-    {
+        // Register to inventory changes event.
         if (InventorySystem.Instance != null)
         {
             InventorySystem.Instance.OnStealableChanged += UpdateStealableBarUI;

@@ -16,6 +16,8 @@ public class InventorySystem : MonoBehaviour
     List<StealableBehavior> stolenItemList = new List<StealableBehavior>(); // Items the player has stolen
     List<KeyItemBehavior> keyItemsList = new List<KeyItemBehavior>();       // Key items the player has collected
 
+    private readonly List<PickupItemBehavior> trackedItems = new();
+
     // Getters
     public IReadOnlyList<StealableBehavior> StolenItemList => stolenItemList;
 
@@ -39,15 +41,64 @@ public class InventorySystem : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        SubscribeToAllPickupItems();
+    }
+
+    private void OnDisable()
+    {
+        UnsubscribeFromAllPickupItems();
+    }
+
+    private void SubscribeToAllPickupItems()
+    {
+        trackedItems.Clear();
+
+        PickupItemBehavior[] items = FindObjectsByType<PickupItemBehavior>(FindObjectsSortMode.None);
+        foreach (PickupItemBehavior item in items)
+        {
+            item.OnPickedUp += HandleItemPickedUp;
+            item.OnReset += HandleItemReset;
+
+            trackedItems.Add(item);
+        }
+    }
+
+    private void UnsubscribeFromAllPickupItems()
+    {
+        foreach (PickupItemBehavior item in trackedItems)
+        {
+            if (item == null) continue;
+
+            item.OnPickedUp -= HandleItemPickedUp;
+            item.OnReset -= HandleItemReset;
+        }
+
+        trackedItems.Clear();
+    }
+
+    private void HandleItemPickedUp(PickupItemBehavior item)
+    {
+        if (item is StealableBehavior stealable)
+        {
+            AddStolenItemToInventory(stealable);
+        }
+        else if (item is KeyItemBehavior key)
+        {
+            AddKeyToInventory(key);
+        }
+    }
+
     // Adds a stolen item to the inventory and updates the UI.
-    public void AddStolenItemToInventory(StealableBehavior stolenItem)
+    private void AddStolenItemToInventory(StealableBehavior stolenItem)
     {
         stolenItemList.Add(stolenItem);
         OnStealableChanged?.Invoke(stolenItem, true);
     }
 
     // Adds a key item to the inventory and updates the UI.
-    public void AddKeyToInventory(KeyItemBehavior keyItem)
+    private void AddKeyToInventory(KeyItemBehavior keyItem)
     {
         keyItemsList.Add(keyItem);
         OnKeyItemChanged?.Invoke(keyItem, true);
@@ -85,5 +136,8 @@ public class InventorySystem : MonoBehaviour
         OnResetKey?.Invoke(keyItem);
     }
 
-    
+    private void HandleItemReset(PickupItemBehavior item)
+    {
+        RemoveObject(item);
+    }
 }

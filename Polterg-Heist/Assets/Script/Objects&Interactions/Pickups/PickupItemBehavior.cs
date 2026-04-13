@@ -1,5 +1,6 @@
-using UnityEngine;
+using System;
 using System.Collections;
+using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 [RequireComponent(typeof(Collider2D))]
@@ -11,7 +12,10 @@ public abstract class PickupItemBehavior : MonoBehaviour, IResetInitialState
 
     protected Light2D lightStealable;
     protected ParticleSystem[] sparkles;
-    
+
+    public event Action<PickupItemBehavior> OnPickedUp;
+    public event Action<PickupItemBehavior> OnReset;
+
     // Getters
     public SpriteRenderer ItemSpriteRenderer {  get { return itemSpriteRenderer; } }
 
@@ -29,10 +33,10 @@ public abstract class PickupItemBehavior : MonoBehaviour, IResetInitialState
         PossessionManager possessionManager = collision.GetComponent<PossessionManager>();
         if (collision.GetComponent<PlayerController>() != null || (possessionManager != null && possessionManager.IsPossessing))//(collision.GetComponent<PossessionController>() != null && collision.GetComponent<KeyController>() == null))
         {
+            OnPickedUp?.Invoke(this);
             HideItem();
-
-        }
-            
+            OnItemPickedUpSound();
+        }            
     }
 
     protected void HideItem()
@@ -52,9 +56,12 @@ public abstract class PickupItemBehavior : MonoBehaviour, IResetInitialState
         }
     }
 
+    protected virtual void OnItemPickedUpSound() { }
+
     public virtual void ResetInitialState()
     {
-        InventorySystem.Instance.RemoveObject(this);
+        //InventorySystem.Instance.RemoveObject(this);
+        OnReset?.Invoke(this);
         itemSpriteRenderer.enabled = true;
         itemCollider.enabled = true;
         if (lightStealable != null)
