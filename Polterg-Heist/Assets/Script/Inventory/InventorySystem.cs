@@ -6,20 +6,26 @@ using System.Linq;
 
 public class InventorySystem : MonoBehaviour
 {
-    public static InventorySystem Instance { get; private set; }
+    // Manages the player's inventory of stolen items and key items.
+    // Notifies InventoryUI on any change.
+    // Also exposes the OnResetKey event used to notify locked doors when a key is reset.
 
-    List<StealableBehavior> stolenItemList = new List<StealableBehavior>();
-    List<KeyItemBehavior> keyItemsList = new List<KeyItemBehavior>();
+
+    public static InventorySystem Instance { get; private set; }            // Singleton
+
+    List<StealableBehavior> stolenItemList = new List<StealableBehavior>(); // Items the player has stolen
+    List<KeyItemBehavior> keyItemsList = new List<KeyItemBehavior>();       // Key items the player has collected
 
     // Getters
-    public List<StealableBehavior> StolenItemList => stolenItemList;
+    public IReadOnlyList<StealableBehavior> StolenItemList => stolenItemList;
+
+    // Fired when a key item is reset — used by locked doors to re-lock themselves
     public event Action<KeyItemBehavior> OnResetKey;
 
-    EnergySystem energy;
-
-    public InputAction Ctrl;
-    public InputAction FullEnergy;
-    public InputAction MinEnergy;
+    // Fired when the UI of a StealableBarUI must change
+    public event Action<StealableBehavior, bool> OnStealableChanged;
+    // Fired when the UI of a CollectedItemBarUI must change
+    public event Action<KeyItemBehavior, bool> OnKeyItemChanged;
 
     private void Awake()
     {
@@ -33,79 +39,47 @@ public class InventorySystem : MonoBehaviour
         }
     }
 
-    void Start()
-    {
-        energy = FindFirstObjectByType<EnergySystem>();
-
-        Ctrl.AddBinding("<Keyboard>/ctrl");
-        FullEnergy.AddBinding("<Keyboard>/r");
-        MinEnergy.AddBinding("<Keyboard>/e");
-        Ctrl.Enable();
-        FullEnergy.Enable();
-        MinEnergy.Enable();
-    }
-
-    private void Update()
-    {
-        if (Ctrl.IsPressed())
-        {
-            if (FullEnergy.WasPressedThisFrame())
-            {
-                Debug.Log("Full energy");
-                energy.ModifyEnergy(energy.maxEnergy);
-            }
-            if (MinEnergy.WasPressedThisFrame())
-            {
-                Debug.Log("Min energy");
-                energy.ModifyEnergy(-energy.maxEnergy);
-            }
-        }
-    }
-
-    // The player stole an item
+    // Adds a stolen item to the inventory and updates the UI.
     public void AddStolenItemToInventory(StealableBehavior stolenItem)
     {
         stolenItemList.Add(stolenItem);
-        InventoryUI.Instance.UpdateStealableBarUI(stolenItem, true);
+        OnStealableChanged?.Invoke(stolenItem, true);
     }
 
-    // The player found a key
+    // Adds a key item to the inventory and updates the UI.
     public void AddKeyToInventory(KeyItemBehavior keyItem)
     {
         keyItemsList.Add(keyItem);
-        InventoryUI.Instance.UpdateCollectedItemBarUI(keyItem, true);
+        OnKeyItemChanged?.Invoke(keyItem, true);
     }
 
-    // Did the player picked up a particular key item
+    // Returns true if the given key item is currently in the inventory.
     public bool IsKeyPickedUp(KeyItemBehavior keyItem)
     {
-        if (keyItemsList.Contains(keyItem))
-        {
-            return true;
-        }
-        return false;
+        return keyItemsList.Contains(keyItem);
     }
 
-    // Remove a specefic object from the inventory
+    // Removes an item from the inventory and updates the UI.
+    // Handles both stealable items and key items.
     public void RemoveObject(PickupItemBehavior pickupItem)
     {
         // Is the object we want to remove stealable
         if (stolenItemList.Contains(pickupItem))
         {
             stolenItemList.Remove((StealableBehavior)pickupItem);
-            InventoryUI.Instance.UpdateStealableBarUI((StealableBehavior)pickupItem, false);
+            OnStealableChanged?.Invoke((StealableBehavior)pickupItem, false);
         }
         // Is the object we want to remove a key
         else if (keyItemsList.Contains(pickupItem))
         {
             KeyItemBehavior keyItem = (KeyItemBehavior)pickupItem;
             keyItemsList.Remove(keyItem);
-            InventoryUI.Instance.UpdateCollectedItemBarUI(keyItem, false);
-            //OnResetKey?.Invoke(keyItem);
+            OnKeyItemChanged?.Invoke(keyItem, false);
         }
     }
 
-    // Reset locked door associated with the key
+    // Fires the OnResetKey event for the given key item.
+    // Called when a key is reset so locked doors can relock themselves.
     public void NotifyKeyReset(KeyItemBehavior keyItem)
     {
         OnResetKey?.Invoke(keyItem);
