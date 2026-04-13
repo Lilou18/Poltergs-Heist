@@ -3,35 +3,47 @@ using System.Collections;
 
 public class Cat : BasicNPCBehaviour, IPatrol
 {
+    // Extends BasicNPCBehaviour for the cat NPC.
+    // Handles:
+    // - Patrolling between patrol points
+    // - Hunting possessed objects that enter its field of view
+    // - Attacking possessed objects on contact
+    // - Getting trapped in a cage
+
     [Header("Sound Event")]
-    [SerializeField] protected AK.Wwise.Event catSlapEvent;
-    [SerializeField] protected AK.Wwise.Event catSoundsEvent;
-    [SerializeField] protected AK.Wwise.Event cageCloseSoundEvent;
-    protected bool isNormalCat = true;
-
-    [Header("Patrolling Variables")]  
-    [SerializeField] PatrolPointData[] patrolPoints;  // All cat patrol destinations
-    PatrolPointData nextPatrolPoint;  // Next cat patrol destination
-    private int indexPatrolPoints;    // Keep track of patrol points
-    private bool canMove;
-    private PatrolPointData initialPatrolPoint;
-
-    [Header("Hunting variables")]
-    [SerializeField] float attackTime = 3f;
-    [SerializeField] float huntingSpeed = 8f;
-    [SerializeField] float maxHeightObject = 0.6f;  // Maximum height of an object that the cat can chase
-    [SerializeField] float maxWidthObject = 0.6f;   //Maximum width of an object thtat the cat can chase
-    public bool isHunting;   // Is the cat chasing an objet
-    private bool isAttacking;   // Is the cat attacking the object
-    GameObject targetPossessedObject; // Cat hunting target
-
-    Animator catAnim;
-    Collider2D catCollider;
-    Coroutine patrolCoroutine;
+    [SerializeField] protected AK.Wwise.Event catSlapEvent;         // Played when the cat attacks an object
+    [SerializeField] protected AK.Wwise.Event catSoundsEvent;       // Idle sound, stopped during hunting
+    [SerializeField] protected AK.Wwise.Event cageCloseSoundEvent;  // Played when the cage closes on the cat
 
 
+    [Header("Patrolling")]  
+    [SerializeField] PatrolPointData[] patrolPoints;                // Ordered list of patrol destinations    
 
-    GameObject cage;    // Cage the cat is trapped in
+    [Header("Hunting")]
+    [SerializeField] float attackTime = 3f;                         // Duration of the attack before releasing the object
+    [SerializeField] float huntingSpeed = 8f;                       // Movement speed while chasing a target
+    [SerializeField] float maxHeightObject = 0.6f;                  // Maximum object height the cat will chase
+    [SerializeField] float maxWidthObject = 0.6f;                   // Maximum object width the cat will chase
+
+    private PatrolPointData nextPatrolPoint;                        // Next patrol destination
+    private PatrolPointData initialPatrolPoint;                     // First patrol point
+    private int indexPatrolPoints;                                  // Index of the next patrol point to visit
+
+
+    private GameObject targetPossessedObject;                       // The possessed object the cat is currently hunting
+    private GameObject cage;                                        // The cage the cat is currently trapped in, null if free
+
+    private bool canMove;                                           // False when the cat is trapped in a cage
+    protected bool isIdleSoundPlaying = true;                       // True while the idle sound is playing
+    private bool isHunting;                                         // True while the cat is chasing a target
+    private bool isAttacking;                                       // True while the cat is performing an attack
+
+
+    private Animator catAnim;                                       // Controls attack and caught animations
+    private Collider2D catCollider;                                 // Used for overlap detection when checking if the cat touched the target
+
+    private Coroutine patrolCoroutine;                              // Currently running patrol coroutine
+    private Coroutine huntingCoroutine;                             // Currently running hunting coroutine
 
     protected override void Start()
     {
@@ -46,10 +58,12 @@ public class Cat : BasicNPCBehaviour, IPatrol
         catCollider = GetComponent<Collider2D>();
         catAnim = GetComponentInChildren<Animator>();
 
-        isNormalCat = true;
+        isIdleSoundPlaying = true;
         catSoundsEvent.Post(gameObject);
     }
 
+    // Handles patrol and hunting state transitions each frame.
+    // Update the cat Icon base on the state
     protected override void Update()
     {
         UpdateIconDisplay();
@@ -58,33 +72,38 @@ public class Cat : BasicNPCBehaviour, IPatrol
         {
             DetectMovingObjects();
             
-            // Patrolling cat
+            // If there is nothing out of ordinary, the cat patrol
             if (!isHunting && !isAttacking && patrolCoroutine == null)
             {
-                if (!isNormalCat)
+                if (!isIdleSoundPlaying)
                 {
-                    isNormalCat = true;
+                    // Play idle sound if it was stopped during hunting
+                    isIdleSoundPlaying = true;
                     catSoundsEvent.Post(gameObject);
                 }                
                 patrolCoroutine = StartCoroutine(Patrol());
             }
-            // Hunting Cat
+            // If a small enough possessed object move in the FOV of the cat,
+            // we start the hunt
             else if (isHunting && targetPossessedObject != null && !isAttacking)
             {
-                isNormalCat = false;
+                isIdleSoundPlaying = false;
                 catSoundsEvent.Stop(gameObject);
 
+                // Stop the patrol to start the hunt
                 if (patrolCoroutine != null)
                 {
                     StopCoroutine(patrolCoroutine);
                     patrolCoroutine = null;
                 }
 
-                StartCoroutine(ObjectHunting());
+                if (huntingCoroutine == null)
+                    huntingCoroutine = StartCoroutine(ObjectHunting());
             }
         }        
     }
 
+    // Shows alert icon while hunting or attacking, hides it when trapped in a cage.
     protected override IconState GetIconState()
     {
         if (!canMove) return IconState.None;
@@ -92,7 +111,8 @@ public class Cat : BasicNPCBehaviour, IPatrol
         return IconState.None;
     }
 
-    // Cat movement detection
+    // Starts hunting if a small enough moving object enters the detection radius.
+    // Objects larger than maxWidthObject or maxHeightObject are ignored.
     protected override void OnDetectionResult(DetectionResult result)
     {
         if (result.foundMovingObject && !isHunting && result.objectWidth <= maxWidthObject && result.objectHeight <= maxHeightObject)
@@ -101,20 +121,22 @@ public class Cat : BasicNPCBehaviour, IPatrol
             targetPossessedObject = result.movingObject;
         }
     }
-    
-    // Patrolling of the cat
+
+    // Moves the cat to the next patrol point.
     public IEnumerator Patrol()
     {
         if (patrolPoints.Length == 0 || nextPatrolPoint == null) yield break;   // If there is no patrolPoint
 
-        // Get movement direction
+        // Move to the patrol point
         Vector3 destination = new Vector3(nextPatrolPoint.Point.position.x, transform.position.y, transform.position.z);
         yield return npcMovementController.ReachTarget(destination, currentFloorLevel, nextPatrolPoint.FloorLevel);
+
+        // Set up for the next patrol point
         patrolCoroutine = null;
         MoveToNextAvailablePatrolPoint();
     }
 
-    // Which patrol point is the new destination of the cat
+    // Advances to the next patrol point, then start again at the end of the list.
     public void MoveToNextAvailablePatrolPoint()
     {
         indexPatrolPoints++;
@@ -125,39 +147,44 @@ public class Cat : BasicNPCBehaviour, IPatrol
         nextPatrolPoint = patrolPoints[indexPatrolPoints];
     }
 
-    // The cat must chase any object it sees moving
+    // Chases the target possessed object until contact or loss of sight.
+    // When there is a contact, the cat attack.
+    // On loss of sight, resets hunting state to resume patrol.
     private IEnumerator ObjectHunting()
     {
         isAttacking = true;        
         surpriseSoundEvent.Post(gameObject);
 
+        PossessionController possessionController = targetPossessedObject.GetComponent<PossessionController>();
+        Collider2D targetCollider = targetPossessedObject.GetComponent<Collider2D>();
+
         // Continue hunting until the cat catches the object or loses track of it
         while (isHunting && targetPossessedObject != null)
         {
+            // Verify if the target is still in the FOV
             RaycastHit2D hit = Physics2D.Raycast(transform.position,
                                      (targetPossessedObject.transform.position - transform.position).normalized,
                                      detectionRadius,
                                      ~ignoreLayerSightBlocked);
 
-            // Check if the possessed object is still in the field of view of the cat
+            // Target is no longer visible. Abort the hunt and resume patrol
             if (hit.collider == null || hit.collider.gameObject != targetPossessedObject)
             {
                 isHunting = false;
                 isAttacking = false;
                 targetPossessedObject = null;
+                huntingCoroutine = null;
                 yield break;
             }
 
             // Get the possessed object's position and movement
             Vector3 objectPosition = targetPossessedObject.transform.position;
-            PossessionController possessionController = targetPossessedObject.GetComponent<PossessionController>();
 
-            // Check if cat is directly beneath the object
+            // Special case: cat is directly below the object
+            // Mirror the object's movement direction instead of chasing its position
             bool isCatUnderObject = Mathf.Abs(transform.position.x - objectPosition.x) < 0.5f;
-
             if (isCatUnderObject && objectPosition.y > transform.position.y)
             {
-                // If directly under and object is higher, use object's movement direction
                 if (possessionController != null)
                 {
                     // Get movement direction from the possessed object
@@ -173,27 +200,30 @@ public class Cat : BasicNPCBehaviour, IPatrol
             }
             else
             {
-                // Regular behavior - move toward object
+                // Standard chase. Face and move toward the target's X position
                 Vector3 destination = new Vector3(objectPosition.x, transform.position.y, objectPosition.z);
                 Vector2 direction = (new Vector2(destination.x, destination.y) - (Vector2)transform.position).normalized;
                 bool faceRight = direction.x >= 0;
                 SetFacingDirection(faceRight);
             }
 
-            // Cat is running towards the object target            
+            
+            // Keep Z position aligned with the target to ensure correct depth sorting
             transform.position = new Vector3(transform.position.x, transform.position.y, objectPosition.z);
 
+            // Cat is running towards the object target
             Vector3 moveDestination = new Vector3(objectPosition.x, transform.position.y, objectPosition.z);
             transform.position = Vector3.MoveTowards(transform.position, moveDestination, huntingSpeed * Time.deltaTime);
+            
             // Verify if the Cat toutched the object
-
             Bounds catBounds = catCollider.bounds;
-            Bounds targetBounds = targetPossessedObject.GetComponent<Collider2D>().bounds;
+            Bounds targetBounds = targetCollider.bounds;
 
             // Check if bounds overlap in X and Y axes only
             bool xOverlap = Mathf.Max(catBounds.min.x, targetBounds.min.x) <= Mathf.Min(catBounds.max.x, targetBounds.max.x);
             bool yOverlap = Mathf.Max(catBounds.min.y, targetBounds.min.y) <= Mathf.Min(catBounds.max.y, targetBounds.max.y);
 
+            // The cat is touching the object so it attacks and stop the hunt
             if (xOverlap && yOverlap)
             {
                 isHunting = false;
@@ -202,10 +232,13 @@ public class Cat : BasicNPCBehaviour, IPatrol
             }
             yield return null;
         }
-        
+        huntingCoroutine = null;
     }
 
-    // The cat attack the possessed object
+    // Locks possession of the target object and waits for the attack to finish.
+    // Releases the object after attackTime seconds.
+    // The player is being forced out of the possessed object and can't
+    // possessed this object until the attack is finished.
     private IEnumerator AttackObject()
     {
         isAttacking = true;       
@@ -219,37 +252,44 @@ public class Cat : BasicNPCBehaviour, IPatrol
             isAttacking = false;
             yield break;
         }
-        targetObjectManager.isAttacked = true;
-        targetObjectManager.LockPossession(true);   // The player can't possessed this object as long as the cat attack it
-        // After the attack the object is no longer a target
+        targetObjectManager.IsAttacked = true;
+
+        // Prevent the player from possessing the object while the cat is attacking
+        targetObjectManager.LockPossession(true);
+
+        // After the attack, the object is no longer a target
         targetPossessedObject = null;
+
+        // If the player is currently possessing the object, force a depossession
         if (targetObjectManager.IsPossessing)
         {
             targetObjectManager.StopPossession();
         }
 
-
         yield return new WaitForSeconds(attackTime);      
         
+        // When the attack is finished the player can posssessed the object again
         targetObjectManager.LockPossession(false);
         catAnim.SetBool("IsAttacking", false);
         isAttacking = false;
 
-        targetObjectManager.isAttacked = false;
+        targetObjectManager.IsAttacked = false;
     }
 
-    // If the cat enters the cage it remains trapped.
+    // Traps the cat when it is fully inside a cage trigger.
+    // Stops all movement and plays the cage close animation.
     private void OnTriggerStay2D(Collider2D collision)
     {
         if (canMove && collision.gameObject.CompareTag("Cage"))
         {
-            
+            // If the cat is completely inside the cage, it's trapped
             if(collision.bounds.Contains(catCollider.bounds.min) && collision.bounds.Contains(catCollider.bounds.max))
             {           
                 surpriseSoundEvent.Post(gameObject);
                 canMove = false;
                 StopAllCoroutines();
                 fovLight.enabled = false;
+
                 collision.GetComponentInParent<Animator>().SetBool("CloseCage", true);
                 cageCloseSoundEvent.Post(gameObject);
                 catAnim.SetBool("IsAttacking", false);
@@ -259,6 +299,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
         }
     }
 
+    // Clears the caught animation flag when the cat exits the cage trigger.
     private void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.gameObject.CompareTag("Cage"))
@@ -271,6 +312,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
     {
         base.ResetInitialState();
         patrolCoroutine = null;
+        huntingCoroutine = null;
         isHunting = false;
         isAttacking = false;
         nextPatrolPoint = initialPatrolPoint;
@@ -288,8 +330,7 @@ public class Cat : BasicNPCBehaviour, IPatrol
         catAnim.SetBool("IsAttacking", false);
         catAnim.SetBool("IsCaught", false);
         npcMovementController.Reset();
-        // Reset Sound variables
-        isNormalCat = true;
+        isIdleSoundPlaying = true;
         catSlapEvent.Stop(gameObject);
         catSoundsEvent.Post(gameObject);
     }

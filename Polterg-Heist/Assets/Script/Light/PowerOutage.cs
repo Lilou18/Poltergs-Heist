@@ -149,14 +149,6 @@ public class PowerOutage : MonoBehaviour, IPossessable, IResetInitialState
         foreach (HumanNPCBehaviour npc in affectedNPCs)
         {
             npc.NpcMovementController.ChangeSpeed();
-            //PatrollingNPCBehaviour patrollingNPC = npc.gameObject.GetComponent<PatrollingNPCBehaviour>();
-            //if (patrollingNPC != null)
-            //{
-            //    ///canMove = true;
-            //    // movementspeed réduit
-            //    /////TODO
-
-            //}
         }
         affectedNPCs.Clear();
     }

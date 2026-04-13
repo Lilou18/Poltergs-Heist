@@ -97,14 +97,6 @@ public static class LightUtility
         }
 
         return samplePoints.ToArray();
-        //Vector2[] samplePoints = {
-        //                          objCollider.bounds.center, // Center
-        //                          (Vector2)objCollider.bounds.min, // Bottom-left
-        //                          (Vector2)objCollider.bounds.max, // Top-right
-        //                          new Vector2(objCollider.bounds.min.x, objCollider.bounds.max.y), // Top-left
-        //                          new Vector2(objCollider.bounds.max.x, objCollider.bounds.min.y) // Bottom-right
-        //                          };
-        //return samplePoints;
     }
 
     // Checks if a light is blocked by walls
