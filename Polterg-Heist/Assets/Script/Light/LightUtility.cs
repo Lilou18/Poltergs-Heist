@@ -4,6 +4,13 @@ using UnityEngine.Rendering.Universal;
 
 public static class LightUtility
 {
+    // Utility class for light-based visibility checks.
+    // Used by HumanNPCBehaviour to determine if objects are illuminated
+
+    // Returns true if the given light collider illuminates any part of the target collider.
+    // Only Point lights are supported. Global and other light types are ignored because
+    // we don't use them.
+    // Walls and floors can block the light ray.
     public static bool IsPointHitByLight(Collider2D lightCollider, Collider2D npcCollider, LayerMask wallFloorLayer)
     {
         Light2D light = lightCollider.GetComponent<Light2D>();
@@ -18,23 +25,24 @@ public static class LightUtility
         if(light.lightType == Light2D.LightType.Point)
         {
             Vector2[] samplePoints = GetSamplePointsFromObject(npcCollider);
+            Vector2 lightPosition = lightCollider.transform.position;
 
             // Check if any parts of the object is hit by light
             foreach (Vector2 point in samplePoints)
             {
-                // Calculate the distance from light to the point position
-                Vector2 lightPosition = lightCollider.transform.position;
+                // Calculate the distance from light to the point position                
                 float distance = Vector2.Distance(point, lightPosition);
+
+                // Skip points outside the light's outer radius
                 if (distance <= light.pointLightOuterRadius)
                 {
-                    // Calculate angle between light's forward direction and the point position
+                    // Check if the point is within the light's cone angle
                     Vector2 directionLightToPoint = (point - (Vector2)lightPosition).normalized;
                     float angle = Vector2.Angle(lightCollider.transform.up, directionLightToPoint);
-
-                    // Check if the point is within the outer spot angle
+             
                     if (angle <= light.pointLightOuterAngle / 2)
                     {
-                        // Check if walls does not block the light
+                        // Check if a wall or floor blocks the light ray
                         if (!BlockedByWall(lightPosition, directionLightToPoint, distance, wallFloorLayer))
                         {
                             return true;
@@ -47,67 +55,46 @@ public static class LightUtility
         return false;
     }
 
-    // Get multiple points across the object collider to see if it's hit by light
+    // Samples multiple points distributed across the object's bounding box.
+    // Used to approximate whether any part of the object is illuminated or visible.
+    // Includes center, corners, and evenly spaced points along each edge.
     public static Vector2[] GetSamplePointsFromObject(Collider2D objCollider)
     {
         List<Vector2> samplePoints = new List<Vector2>();
 
-        // Add the center
-        samplePoints.Add(objCollider.bounds.center);
+        Bounds objColliderBounds = objCollider.bounds;
 
-        // Add the corners
-        samplePoints.Add(new Vector2(objCollider.bounds.min.x, objCollider.bounds.min.y)); // Bottom-left
-        samplePoints.Add(new Vector2(objCollider.bounds.max.x, objCollider.bounds.max.y)); // Top-right
-        samplePoints.Add(new Vector2(objCollider.bounds.min.x, objCollider.bounds.max.y)); // Top-left
-        samplePoints.Add(new Vector2(objCollider.bounds.max.x, objCollider.bounds.min.y)); // Bottom-right
+        // Center
+        samplePoints.Add(objColliderBounds.center);
 
-        // Add points along the edges
-        float width = objCollider.bounds.size.x;
-        float height = objCollider.bounds.size.y;
+        // Corners
+        samplePoints.Add(new Vector2(objColliderBounds.min.x, objColliderBounds.min.y)); // Bottom-left
+        samplePoints.Add(new Vector2(objColliderBounds.max.x, objColliderBounds.max.y)); // Top-right
+        samplePoints.Add(new Vector2(objColliderBounds.min.x, objColliderBounds.max.y)); // Top-left
+        samplePoints.Add(new Vector2(objColliderBounds.max.x, objColliderBounds.min.y)); // Bottom-right
 
-        // Number of additional points to sample along each edge
-        int edgeSamples = 10; // You can adjust this value as needed
+        // Edge samples — higher count increases accuracy at the cost of performance
+        int edgeSamples = 3; // You can adjust this value as needed
 
-        // Sample points along the top edge
+        // Add points along the edges of the collider
         for (int i = 1; i < edgeSamples; i++)
         {
-            float x = objCollider.bounds.min.x + (width * i / edgeSamples);
-            samplePoints.Add(new Vector2(x, objCollider.bounds.max.y));
-        }
+            float x = objColliderBounds.min.x + objColliderBounds.size.x * i / edgeSamples;
+            float y = objColliderBounds.min.y + objColliderBounds.size.y * i / edgeSamples;
 
-        // Sample points along the bottom edge
-        for (int i = 1; i < edgeSamples; i++)
-        {
-            float x = objCollider.bounds.min.x + (width * i / edgeSamples);
-            samplePoints.Add(new Vector2(x, objCollider.bounds.min.y));
+            samplePoints.Add(new Vector2(x, objColliderBounds.max.y)); // Top edge
+            samplePoints.Add(new Vector2(x, objColliderBounds.min.y)); // Bottom edge
+            samplePoints.Add(new Vector2(objColliderBounds.min.x, y)); // Left edge
+            samplePoints.Add(new Vector2(objColliderBounds.max.x, y)); // Right edge
         }
-
-        // Sample points along the left edge
-        for (int i = 1; i < edgeSamples; i++)
-        {
-            float y = objCollider.bounds.min.y + (height * i / edgeSamples);
-            samplePoints.Add(new Vector2(objCollider.bounds.min.x, y));
-        }
-
-        // Sample points along the right edge
-        for (int i = 1; i < edgeSamples; i++)
-        {
-            float y = objCollider.bounds.min.y + (height * i / edgeSamples);
-            samplePoints.Add(new Vector2(objCollider.bounds.max.x, y));
-        }
-
         return samplePoints.ToArray();
     }
 
-    // Checks if a light is blocked by walls
+    // Returns true if a wall or floor collider blocks the ray from the light to the target point.
     public static bool BlockedByWall(Vector2 lightPosition, Vector2 directionLightToObject, float distance, LayerMask wallFloorLayer)
     {
         RaycastHit2D hit = Physics2D.Raycast(lightPosition, directionLightToObject, distance, wallFloorLayer);
 
-        if (hit.collider == null)
-        {
-            return false;
-        }
-        return true;
+        return hit.collider != null;
     }
 }
