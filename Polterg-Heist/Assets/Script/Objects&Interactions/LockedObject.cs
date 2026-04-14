@@ -1,7 +1,4 @@
 using System.Collections;
-using Unity.VisualScripting.Antlr3.Runtime;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 public class LockedObject : InteractibleManager
