@@ -50,6 +50,7 @@ public class BaseSceneManager : MonoBehaviour
     // Loads a specific scene by its SceneName enum value
     public void LoadSpecificScene(SceneName scene)
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene(scene.ToString());
     }
 
