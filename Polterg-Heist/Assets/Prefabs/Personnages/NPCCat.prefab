@@ -202,6 +202,7 @@ GameObject:
   - component: {fileID: 3730382630439531477}
   - component: {fileID: 4700009154862043946}
   - component: {fileID: 2354190293712629826}
+  - component: {fileID: 2113784832468456235}
   - component: {fileID: 5842330122892186305}
   - component: {fileID: 7941051401111345401}
   m_Layer: 12
@@ -272,20 +273,11 @@ MonoBehaviour:
   ignoreLayerSightBlocked:
     serializedVersion: 2
     m_Bits: 3898696
-  nonSuspiciousColorFOV: {r: 1, g: 0, b: 0.83137256, a: 1}
-  alertColorFOV: {r: 1, g: 0.015686275, b: 0, a: 1}
   currentFloorLevel: 0
-  alertSpriteRenderer: {fileID: 5887992446384275289}
-  alertIcon: {fileID: 21300000, guid: 0f2a294604cb26142a964f4745c1af41, type: 3}
   surpriseSoundEvent:
     idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: 16245d63fabf0534a9a55f1c35eb5005, type: 2}
-  nonSuspiciousSoundEvent:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 0}
-  soundCooldown: 1.5
   catSlapEvent:
     idInternal: 0
     valueGuidInternal: 
@@ -379,6 +371,23 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &2113784832468456235
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3199589612183537224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e1517edf1ab5df4d93219005c97a8fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  iconRenderer: {fileID: 5887992446384275289}
+  investigationIcon: {fileID: 0}
+  alertIcon: {fileID: 21300000, guid: 0f2a294604cb26142a964f4745c1af41, type: 3}
+  nonSuspiciousColorFOV: {r: 1, g: 0, b: 0.83137256, a: 1}
+  alertColorFOV: {r: 1, g: 0.015686275, b: 0, a: 1}
 --- !u!82 &5842330122892186305
 AudioSource:
   m_ObjectHideFlags: 0

@@ -543,4 +543,9 @@ public abstract class MovementController : MonoBehaviour
                       
         }
     }
+
+    public void PlayerGotCaught()
+    {
+        canMove = false;
+    }
 }

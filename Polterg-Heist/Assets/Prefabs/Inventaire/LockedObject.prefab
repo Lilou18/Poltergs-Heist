@@ -244,7 +244,6 @@ MonoBehaviour:
     idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: 9fbd92b122c582b469aecad5ed3715df, type: 2}
-  keyItemForActivation: {fileID: 0}
 --- !u!1 &8607629222849559673
 GameObject:
   m_ObjectHideFlags: 0
@@ -407,7 +406,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1565016077
   m_SortingLayer: 5
-  m_SortingOrder: 12
+  m_SortingOrder: 16
   m_Sprite: {fileID: 21300000, guid: 59dd4053a6ffdaa4a9cb2677e95381f1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

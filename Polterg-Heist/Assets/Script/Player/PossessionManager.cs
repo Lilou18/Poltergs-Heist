@@ -31,7 +31,7 @@ public class PossessionManager : MonoBehaviour, IResetInitialState
     bool hasEnoughSpace;
     bool hasPosControl;
     public bool isPossessionLocked;
-    public bool isAttacked = false;
+    private bool isAttacked = false;
 
     //Shortcuts
     PlayerController player;
@@ -48,6 +48,8 @@ public class PossessionManager : MonoBehaviour, IResetInitialState
     public bool IsPossessing => isPossessed;
     public PlayerController Player => player;
     public float PossessionDistance => possessionDistance;
+
+    public bool IsAttacked {  get; set; }
 
     protected void Start()
     {
@@ -211,7 +213,6 @@ public class PossessionManager : MonoBehaviour, IResetInitialState
             print("NOT DEPOSSESSING CAUSE CLIMBING");
             return;
         }
-        print("STOP POSSESSION!");
         if (onDepossess != null) { onDepossess(depossessParam); }
 
         possessionOffSoundEvent.Post(gameObject);

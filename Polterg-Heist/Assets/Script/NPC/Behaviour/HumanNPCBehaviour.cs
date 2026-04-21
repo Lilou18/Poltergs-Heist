@@ -3,190 +3,246 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 public class HumanNPCBehaviour : BasicNPCBehaviour
 {
-    // Sound variables
-    [SerializeField] protected AK.Wwise.Event curiousNPCSoundEvent;
+    // Extends BasicNPCBehaviour for human NPCs.
+    // Handles:
+    // - Light based visibility checks (objects must be lit to be detected)
+    // - Mirror reflection detection (player visible through mirrors triggers game over)
+    // - Suspicion reporting to SuspicionManager
+    // - Sound delegation to HumanNPCSoundController
+    // - Investigation delegation to NPCInvestigationController
 
     [Header("Suspicion variables")]
-    // Variable manage suspicion of the NPC
-    [SerializeField] protected float minSuspiciousRotation; // Minimum rotation change in degrees to trigger suspicion
-    [SerializeField] protected float minSuspiciousPosition; // Minimum position change to trigger suspicion
-    protected bool canSee;  // Ability of the player to see
-
-    [Header("Mirror")]
-    [SerializeField] protected LayerMask mirrorLayer;   // Layer of the mirrors
-
-    protected GameObject player;
-    
-
-    [Header("Investigation Variables")]
-    [SerializeField] protected float surpriseWaitTime = 2f;
-    [SerializeField] protected float investigationWaitTime = 3f;
-    [SerializeField] protected Sprite investigationIcon;
-
-    protected bool isInvestigating = false; // Is the NPC investigating something suspectful
-    [SerializeField]protected bool hasActiveInvestigation = false;
-    public AudioSource audioSource;  // Source of the surprised sound
+    [SerializeField] protected float minSuspiciousRotation;         // Minimum rotation change in degrees to trigger displacement suspicion
+    [SerializeField] protected float minSuspiciousPosition;         // Minimum position change to trigger displacement suspicion
 
 
-    protected Queue<IEnumerator> investigationQueue = new Queue<IEnumerator>();
-    private bool isAtInitialPosition = false;
-    private Coroutine currentInvestigation = null;
+    [Header("Mirror Detection")]
+    [SerializeField] protected LayerMask mirrorLayer;               // Layer containing mirror objects
 
-    [Header("Lighting Variable")]
-    [SerializeField] float detectionRadiusLight = 20f;
-    [SerializeField] LayerMask lightLayer;  // Layer of the gameobject light
-    [SerializeField] LayerMask wallFloorLayer;   // Layer of the gameobject wall
-    string visibleLayer = "Default";
-    string notVisibleLayer = "NotVisible";
-    int visibleLayerID;
-    int notVisibleLayerID;
+    [Header("Lighting")]
+    [SerializeField] float detectionRadiusLight = 20f;              // Radius used to find nearby lights when checking if an object is lit
+    [SerializeField] LayerMask lightLayer;                          // Layer containing light objects
+    [SerializeField] LayerMask wallFloorLayer;                      // Layer containing walls and floors, used to check if light is blocked
+
+    protected HumanNPCSoundController soundController;              // Manages all NPC sound reactions
+    protected NPCInvestigationController investigationController;   // Manages investigation queue and coroutines
+
+    protected GameObject player;                                    // Reference to the player GameObject
+    private Collider2D playerCollider;                              // Reference to the player collider
+
+    protected bool canSee;                                          // False when the NPC is inside a room and vision is disabled
+    protected bool hasSeenPolterg = false;                              // True once the NPC has spotted the player
+    protected bool hasSeenMovement = false;                         // True while the NPC has recently seen a moving object
 
 
-    protected bool seePolterg = false;
-    [SerializeField] protected bool hasSeenMovement = false;
+    // Sorting layer IDs
+    // Used to control whether the FOV cone light affects possessed objects.
+    // This prevents the FOV cone from illuminating objects that are in darkness,
+    // which would otherwise reveal them to the player despite being undetectable.
+    private string visibleLayer = "Default";
+    private string notVisibleLayer = "NotVisible";
+    private int visibleLayerID;
+    private int notVisibleLayerID;
 
     protected override void Start()
     {
         base.Start();
+
         player = GameObject.FindWithTag("Player");
-        audioSource = GetComponent<AudioSource>();        
-        isAtInitialPosition = true;
+        playerCollider = player.GetComponent<Collider2D>();
+        soundController = GetComponent<HumanNPCSoundController>();
+        investigationController = GetComponent<NPCInvestigationController>();
         canSee = true;
+
+        // Define the conditions under which the non suspicious sound can play
+        soundController.InitializeNonSuspiciousSoundConditions(isNonSuspicious);
 
         visibleLayerID = SortingLayer.NameToID(visibleLayer);
         notVisibleLayerID = SortingLayer.NameToID(notVisibleLayer);
+
+        // Link investigation events directly to sound controller
+        investigationController.OnInvestigationStarted += soundController.OnInvestigationStarted;
+        investigationController.OnInvestigationEnded += soundController.OnInvestigationEnded;
     }
 
-    private Coroutine returnToInitialPositionCoroutine;
     protected override void Update()
     {
         base.Update();
 
-        UpdateIconDisplay();
-
-        
-
-        // DetectMovingObjects();
         CheckMirrorReflection();
-
-        if (npcSpriteRenderer == null)
-        {
-            print("WTF");
-        }
-
-        if (investigationQueue.Count > 0 && !isInvestigating)
-        {
-            //nonSuspiciousSoundEvent.Stop(gameObject);
-            if (returnToInitialPositionCoroutine != null)
-            {
-                StopCoroutine(returnToInitialPositionCoroutine);
-                //StopAllCoroutines();
-                returnToInitialPositionCoroutine = null;
-            }
-
-            isAtInitialPosition = false;
-            hasActiveInvestigation = true;
-            IEnumerator investigationCoroutine = investigationQueue.Dequeue();
-            currentInvestigation = StartCoroutine(RunInvestigation(investigationCoroutine));
-        }
-        else if(investigationQueue.Count == 0 && !isInvestigating && !isAtInitialPosition)
-        {
-            isAtInitialPosition = true;
-            returnToInitialPositionCoroutine = StartCoroutine(ReturnToInitialPosition());
-        }
-
-        // If investigation started or we see the poltergeist, stop ambient sound
-        if ((isInvestigating || investigationQueue.Count > 0 || seePolterg) && isNonSuspiciousSoundPlaying)
-        {
-            StopNonSuspiciousSound();
-        }
-        // REMOVE HERE!!!
-        // If investigation ended and nothing else is happening, start ambient sound
-        //else if (!isInvestigating && investigationQueue.Count == 0 && !seePolterg && !isNonSuspiciousSoundPlaying && nonSuspiciousSoundCoroutine == null)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-
     }
 
-    protected virtual void UpdateIconDisplay()
+    // Detection
+
+    // Dispatches detection results to sound and suspicion systems.
+    // Differentiates between a new moving object, the same object moved stopped and moved again
+    // and no object moving.
+    protected override void OnDetectionResult(DetectionResult result)
     {
-        if (alertSpriteRenderer == null) return;
-
-        // We don't show anything
-        if (!hasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease)
+        if (!result.foundMovingObject)
         {
-            alertSpriteRenderer.enabled = false;
-            fovLight.color = nonSuspiciousColorFOV;
+            soundController.OnObjectMovingStopped();
         }
-        // Case 2: If there is an investigation and nothing to alert
-        else if (hasActiveInvestigation && (!hasSeenMovement || SuspicionManager.Instance.HasSuspicionDecrease))
+        else if (!result.wasAlreadyMoving)
         {
-            alertSpriteRenderer.sprite = investigationIcon;
-            alertSpriteRenderer.enabled = true;
-            fovLight.color = nonSuspiciousColorFOV;
+            soundController.OnObjectMovingStarted(result.movingObject);
         }
-        // Case 1: The NPC saw an object moving
-        else if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0)
+        else
         {
-            alertSpriteRenderer.sprite = alertIcon;
-            fovLight.color = alertColorFOV;
-            alertSpriteRenderer.enabled = true;
+            soundController.OnSameObjectStillMoving(result.movingObject);
         }
-        //print("ACTIVE" + hasActiveInvestigation);
 
+        HandleMovementSuspicion(result.objectSize);
+        //HandleChangedPositionSuspicion(result.movingObject.GetComponent<PossessionController>(),result.objectSize);
+    }
 
-        if(hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion <= 0)
+    // Overrides base FOV check with a more precise point based check.
+    protected override bool IsObjectInFieldOfView(Collider2D obj)
+    {
+        if (canSee)
         {
+            // Sample multiple points on the object collider for more accurate detection
+            Vector2[] colliderPoints = LightUtility.GetSamplePointsFromObject(obj);
+            return IsPointInFieldOfView(colliderPoints, obj);
+        }
+        return false;
+    }
+
+    // Checks whether any of the given sample points are:
+    // 1. Within the FOV cone angle
+    // 2. Within detection radius
+    // 3. Illuminated by a nearby light source (unless it's the player)
+    // Also updates the object's sorting layer to reflect visibility.
+    protected bool IsPointInFieldOfView(Vector2[] colliderPoints, Collider2D objectCollider)
+    {
+        foreach (Vector2 point in colliderPoints)
+        {
+            // Check if the object point is in the line of sight of the NPC
+            Vector2 directionToPoint = (point - (Vector2)transform.position).normalized;
+            float angle = Vector2.Angle(facingRight ? Vector2.right : Vector2.left, directionToPoint);
+
+            // Skip this point if it's outside the field of view angle
+            if (angle > fieldOfViewAngle / 2)
+            {
+                continue;
+            }
+
+            // Skip if the point is outside the detection radius
+            if (Vector2.Distance(point, transform.position) > detectionRadius)
+            {
+                continue;
+            }
+
+            SpriteRenderer objectSprite = objectCollider.GetComponentInChildren<SpriteRenderer>();
+            bool isPlayer = objectCollider.GetComponent<PlayerController>() != null;
+
+            // Non-player objects must be lit to be detected            
+            if (!IsObjectLit(objectCollider) && !isPlayer)
+            {
+                if (objectSprite != null)
+                {
+                    // The object is in darkness so we exclude its layer from FOV light so it doesn't visually
+                    // change color under the cone, signaling to the player it cannot be detected
+                    objectSprite.sortingLayerID = notVisibleLayerID;
+                }
+                continue;
+            }
+
+            // Object is visible — update sorting layer for rendering
+            if (objectSprite != null && !isPlayer)
+            {
+                // Object is sufficiently lit so we include its layer in the FOV light rendering
+                // so the cone visually highlights it as detectable
+                objectSprite.sortingLayerID = visibleLayerID;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // Returns true if any nearby light source illuminates the given collider.
+    // Uses LightUtility to verify that the light ray is not blocked by walls or floors.
+    protected bool IsObjectLit(Collider2D objCollider)
+    {
+        Collider2D[] lights = Physics2D.OverlapCircleAll(objCollider.bounds.center, detectionRadiusLight, lightLayer);
+        foreach (Collider2D lightCollider in lights)
+        {
+            if (LightUtility.IsPointHitByLight(lightCollider, objCollider, wallFloorLayer))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Scans nearby mirrors each frame.
+    // If the player's reflection is visible in a mirror and not blocked, triggers NPCSeePolterg().
+    protected void CheckMirrorReflection()
+    {
+        Collider2D[] mirrors = Physics2D.OverlapCircleAll(transform.position, detectionRadius, mirrorLayer);
+        foreach (Collider2D mirrorCollider in mirrors)
+        {
+            Mirror mirror = mirrorCollider.GetComponentInParent<Mirror>();//GetComponent<Mirror>();
+            if (mirror == null) continue;
+
+            // Check if the mirror is in the NPC's FOV
+            if (!IsObjectInFieldOfView(mirrorCollider)) continue;
+
+            // Check if the player is reflected in this mirror           
+            if (mirror.IsReflectedInMirror(playerCollider))
+            {
+                Vector2[] reflectionPoints = mirror.GetReflectionPoints(playerCollider);
+
+                if (IsPointInFieldOfView(reflectionPoints, playerCollider))
+                {
+                    // Check if the reflection is within the NPC's FOV and not obscured
+                    if (!mirror.IsMirrorReflectionBlocked(reflectionPoints, playerCollider) && !hasSeenPolterg)
+                    {                        
+                        NPCSeePolterg();
+                    }
+                }
+
+            }
+        }
+    }
+
+    // Suspicion
+
+    // Updates suspicion based on whether a moving object is currently observed.
+    // Registers and unregisters the NPC as a paranormal observer in SuspicionManager.
+    // Also resets hasSeenMovement when suspicion drops back to zero.
+    protected void HandleMovementSuspicion(float objectSize)
+    {
+        // If the NPC sees an object moving for the first time
+        if (isObjectMoving && !isCurrentlyObserving)
+        {
+            isCurrentlyObserving = true;
+            hasSeenMovement = true;
+            SuspicionManager.Instance.AddParanormalObserver();
+        }
+        // If the object has stopped moving
+        else if (!isObjectMoving && isCurrentlyObserving)
+        {
+            isCurrentlyObserving = false;
+            SuspicionManager.Instance.RemoveParanormalObserver();
+        }
+        // If the object is still moving
+        if (isObjectMoving && isCurrentlyObserving)
+        {
+            SuspicionManager.Instance.UpdateMovementSuspicion(objectSize);
+        }
+
+        if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion <= 0)
             hasSeenMovement = false;
-
-            if (hasActiveInvestigation)
-            {
-                alertSpriteRenderer.sprite = investigationIcon;
-                fovLight.color = nonSuspiciousColorFOV;
-                alertSpriteRenderer.enabled = true;
-            }
-        }
-        //if (hasSeenMovement && alertSpriteRenderer != null)
-        //{
-        //    if (SuspicionManager.Instance.HasSuspicionDecrease)
-        //    {
-        //        alertSpriteRenderer.enabled = false;
-        //        //print("already here");
-        //    }
-
-        //    if (SuspicionManager.Instance.CurrentSuspicion <= 0)
-        //    {
-        //        hasSeenMovement = false;
-        //    }
-        //    // Keep alert icon visible while suspicion exists, hide it when suspicion is gone
-        //    //if (SuspicionManager.Instance.CurrentSuspicion > 0)
-        //    //{
-        //    //    alertIcon.enabled = true;
-        //    //}
-        //    //else
-        //    //{
-        //    //    alertIcon.enabled = false;
-        //    //    hasSeenMovement = false; // Reset the flag when suspicion is gone
-        //    //}
-        //}
-
-    }
-    protected override bool CanPlayNonSuspiciousSound()
-    {
-        bool baseConditions =  base.CanPlayNonSuspiciousSound();
-
-        // Human-specific conditions
-        bool notInvestigating = !isInvestigating && investigationQueue.Count == 0;
-        bool notSeeingReflection = !seePolterg;
-
-        return baseConditions && notInvestigating && notSeeingReflection;
     }
 
-    protected override void HandleChangedPositionSuspicion(PossessionController possessedObject, float objectSize)
+    // Increases suspicion if a possessed object has moved or rotated significantly
+    // since it was last seen by this NPC. Only checked when the object is not moving.
+    protected void HandleChangedPositionSuspicion(PossessionController possessedObject, float objectSize)
     {
         if (!isObjectMoving)
         {
@@ -197,7 +253,6 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
             // The object moved or rotated too much out of sight of the NPC
             if (positionChange >= minSuspiciousPosition || rotationChange >= minSuspiciousRotation)
             {
-                //possessedObject.UpdateLastKnownPositionRotation();
                 SuspicionManager.Instance.UpdateDisplacementSuspicion(objectSize, rotationChange, positionChange);
             }
         }
@@ -205,371 +260,98 @@ public class HumanNPCBehaviour : BasicNPCBehaviour
         possessedObject.UpdateLastKnownPositionRotation();
     }
 
-    protected override void HandleMovementSuspicion(float objectSize)
-    {
-        // If the NPC sees an object moving for the first time
-        if (isObjectMoving && !isCurrentlyObserving)
-        {
-            isCurrentlyObserving = true;
-            hasSeenMovement = true;
-            if(alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.sprite = alertIcon;
-                fovLight.color = alertColorFOV;
-                alertSpriteRenderer.enabled = true;
-            }
-            SuspicionManager.Instance.AddParanormalObserver();
-        }
-        // If the object has stopped moving
-        else if (!isObjectMoving && isCurrentlyObserving)
-        {
-            isCurrentlyObserving = false;
-
-            //if (alertSpriteRenderer != null && hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0)
-            //{
-            //    alertSpriteRenderer.sprite = alertIcon;
-            //    alertSpriteRenderer.enabled = true;
-            //}
-            SuspicionManager.Instance.RemoveParanormalObserver();
-        }
-        // If the object is still moving
-        if (isObjectMoving && isCurrentlyObserving)
-        {
-            SuspicionManager.Instance.UpdateMovementSuspicion(objectSize);
-        }
-    }
-
-    // Verify if the object is in the field of view of the NPC
-    protected override bool IsObjectInFieldOfView(Collider2D obj)
-    {
-        if (canSee)
-        {
-            // Check if any part of the object is seen 
-            Vector2[] colliderPoints = LightUtility.GetSamplePointsFromObject(obj);
-
-            return IsPointInFieldOfView(colliderPoints, obj);
-        }
-        return false;
-       
-        //foreach (Vector2 point in colliderPoints)
-        //{
-        //    // Check if the object is in the line of sight of the NPC
-        //    Vector2 directionToPoint = (point - (Vector2)transform.position).normalized;
-        //    float angle = Vector2.Angle(facingRight ? Vector2.right : Vector2.left, directionToPoint);
-
-        //    // If the object is not within view angle, return false immediately
-        //    if (angle > fieldOfViewAngle / 2)
-        //    {
-        //        continue;
-        //    }
-
-        //    // Check if there is light toutching the object
-        //    if (!IsObjectLit(obj))
-        //    {
-        //        continue;
-        //    }
-
-        //    // Object is in field of view and area is sufficiently lit
-        //    return true;
-        //}
-        //return false;
-
-    }
-
-    // Verifiy if the object is toutched by a light
-    protected bool IsObjectLit(Collider2D objCollider)
-    {
-        Collider2D[] lights = Physics2D.OverlapCircleAll(objCollider.bounds.center, detectionRadiusLight, lightLayer);
-        foreach(Collider2D lightCollider in lights)
-        {
-            if(LightUtility.IsPointHitByLight(lightCollider, objCollider, wallFloorLayer))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Verifiy if any parts of the object is in the field of view
-    protected bool IsPointInFieldOfView(Vector2[] colliderPoints, Collider2D objectCollider)
-    {
-        foreach (Vector2 point in colliderPoints)
-        {
-
-
-            // Check if the object is in the line of sight of the NPC
-            Vector2 directionToPoint = (point - (Vector2)transform.position).normalized;
-            float angle = Vector2.Angle(facingRight ? Vector2.right : Vector2.left, directionToPoint);
-            
-            // If the object is not within view angle, return false immediately
-            if (angle > fieldOfViewAngle / 2)
-            {
-                continue;
-            }
-
-            if(Vector2.Distance(point, transform.position) > detectionRadius)
-            {
-                continue;
-            }
-
-            SpriteRenderer objectSprite = objectCollider.GetComponentInChildren<SpriteRenderer>();
-            // Check if there is light toutching the object
-            if (!IsObjectLit(objectCollider) && !objectCollider.GetComponent<PlayerController>())
-            {
-                if(objectSprite != null)
-                {
-                    objectSprite.sortingLayerID = notVisibleLayerID;
-                }
-                continue;
-            }
-
-            // Object is in field of view and area is sufficiently lit
-            if (objectSprite != null && !objectCollider.GetComponent<PlayerController>())
-            {
-                int objectSortingLayer = objectSprite.sortingLayerID;
-                objectSprite.sortingLayerID = visibleLayerID;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    // Check if we can see the player trough the mirror
-    protected void CheckMirrorReflection()
-    {
-        Collider2D[] mirrors = Physics2D.OverlapCircleAll(transform.position, detectionRadius, mirrorLayer);
-        foreach (Collider2D mirrorCollider in mirrors)
-        {
-            Mirror mirror = mirrorCollider.GetComponentInParent<Mirror>();//GetComponent<Mirror>();
-            if (mirror == null) continue;
-
-            // Check if the mirror is in the field of view of the NPC
-            if (!IsObjectInFieldOfView(mirrorCollider)) continue;
-
-            // Check if the player reflection is in the mirror
-            if (mirror.IsReflectedInMirror(player.GetComponent<Collider2D>()))
-            {
-                //print("player in reflection");
-                Collider2D playerCollider = player.GetComponent<Collider2D>();
-                Vector2[] reflectionPoints = mirror.GetReflectionPoints(playerCollider);
-                //print(reflectionPoints[0]);
-                //print(reflectionPoints.Length);
-                //print("Is reflected in mirror");
-                if (IsPointInFieldOfView(reflectionPoints, playerCollider))
-                {
-                    //print("In field of view");
-                    // If nothing is blocking the sight of the NPC to the reflection of the player
-                    if (!mirror.IsMirrorReflectionBlocked(reflectionPoints, playerCollider) && !seePolterg)
-                    {
-                        if (isNonSuspiciousSoundPlaying)
-                        {
-                            StopNonSuspiciousSound();
-                        }
-                        //StartCoroutine(WaitBeforeNonSuspiciousSound());
-                        //nonSuspiciousSoundEvent.Stop(gameObject);
-                        print("see");
-                        playerCollider.gameObject.GetComponent<MovementController>().canMove = false;
-                        NPCSeePolterg();
-                    }
-                    else
-                    {
-                        //print("BLOCKED!");
-
-                    }
-                } 
-
-            }
-        }
-    }
-
-    // When the Npc see Polterg it's gameover
+    // Called when the NPC sees the player through a mirror.
+    // Triggers max suspicion and reset to the last checkpoint.
     protected void NPCSeePolterg()
     {
-        seePolterg = true;
-        audioSource.Play();
-        surpriseSoundEvent.Post(gameObject);
-        npcAnimMouth.SetTrigger("IsSurprised");
-
-        if(alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.sprite = alertIcon;
-            fovLight.color = alertColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
-
+        hasSeenPolterg = true;
+        soundController.OnPoltergSeen();
         SuspicionManager.Instance.UpdateSeeingPoltergSuspicion();
+        player.GetComponent<MovementController>().PlayerGotCaught();
     }
 
-    // Start the investigation of the sound
+
+    // Investigation
+
+
+    // Enqueues a sound triggered investigation at the given object's position.
+    // If replaceObject is true, the object will be reset to its original position after investigation.
+    // The target floor is the floor where the sound come from.
     public virtual void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
     {
-        // Stop ambient sound when starting investigation
-        StopNonSuspiciousSound();
-        curiousNPCSoundEvent.Post(gameObject);
-
-        hasActiveInvestigation = true;
-        // Activate investigation icon if there is no other alert
-        if (!hasSeenMovement && alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.sprite = investigationIcon;
-            fovLight.color = nonSuspiciousColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
-
-        investigationQueue.Enqueue(InvestigateSoundObject(objectsound, replaceObject, targetFloor));
-        //switch (objectsound.ObjectType)
-        //{
-        //    case SoundEmittingObject.FallingObject:
-        //        investigationQueue.Enqueue(InvestigateFallingObject((FallingObject)objectsound, replaceObject, targetFloor));
-        //        break;
-        //    case SoundEmittingObject.SoundObject:
-        //        investigationQueue.Enqueue(InvestigateSoundObject((JukeBox)objectsound,replaceObject, targetFloor));
-        //        break;
-        //    default:
-        //        Debug.Log("Sound emitting object unknown");
-        //        break;
-        //}
-
+        investigationController.EnqueueSoundInvestigation(objectsound, replaceObject, targetFloor);
     }
 
+    // Enqueues a custom investigation coroutine directly.
+    // Used for scripted investigations triggered by external systems.
+    // Used in PowerOutage when the electricity is cut off.
     public void EnqueueInvestigation(IEnumerator investigation)
     {
-        curiousNPCSoundEvent.Post(gameObject);
-
-        hasActiveInvestigation = true;
-
-        if (!hasSeenMovement && alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.sprite = investigationIcon;
-            fovLight.color = nonSuspiciousColorFOV;
-            alertSpriteRenderer.enabled = true;
-        }
-
-        investigationQueue.Enqueue(investigation);
+        investigationController.EnqueueInvestigation(investigation);
     }
 
-    protected virtual IEnumerator RunInvestigation(IEnumerator investigation)
+    // Return the NPC to it's initial position and facing direction after the end of an investigation
+    public virtual IEnumerator ReturnToInitialPosition()
     {
-        isInvestigating = true;
-        yield return StartCoroutine(investigation);
-
-        // If there is no more investigation we disable the icons
-        if(investigationQueue.Count == 0 && !hasSeenMovement)
-        {
-            hasActiveInvestigation = false;
-
-            if(alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.enabled = false;
-                fovLight.color = nonSuspiciousColorFOV;
-            }
-        }
-        //print(investigationQueue.Count);
-        //print("HASSEENMOVEMENT" + hasSeenMovement);
-        isInvestigating = false;
-        currentInvestigation = null;
-
-        // Mark this moment as the end of a suspicious event
-        lastSuspiciousTime = Time.time;
-
-        // Start ambient sound which will respect cooldown
-        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        {
-            StartNonSuspiciousSound();
-        }
+        yield return npcMovementController.ReachTarget(
+            initialPosition,
+            currentFloorLevel,
+            initialFloorLevel);
+        SetFacingDirection(initialFacingRight);
     }
 
-    // NPC behaviour for sound emitting object investigation
-    protected IEnumerator InvestigateSoundObject(SoundDetection objectsound, bool replaceObject, float targetFloor)
+
+    // Sound
+
+    // Return whether everything is normal for the NPC to sound non suspicious based on current game state.
+    private bool isNonSuspicious()
     {
-        // Take a surprise pause before going on investigation
-        audioSource.Play();
-        npcMovementController.Reset();
-        yield return new WaitForSeconds(surpriseWaitTime);
-
-        //npcAnim.SetBool("InMovement", false);
-        yield return (npcMovementController.ReachTarget(objectsound.transform.position, currentFloorLevel, targetFloor));
-
-        // We can't find a path
-        if (!npcMovementController.CanFindPath)
-        {
-            yield break;
-        }
-
-        // Wait a bit of time before going back to normal
-        yield return new WaitForSeconds(investigationWaitTime);
-
-        // The NPC who must reset the Object reset it (if it's the case)
-        IResetObject resetObject = objectsound.GetComponent<IResetObject>();
-        if(resetObject != null)
-        {
-            if (replaceObject)
-            {
-                resetObject.ResetObject();
-            }
-        }
+        return !isObjectMoving &&
+               !investigationController.IsInvestigating &&
+               investigationController.QueueCount == 0 &&
+               !hasSeenPolterg;
     }
 
-    
-    // Return the NPC to it's initial position and facing direction
-    public  IEnumerator ReturnToInitialPosition()
+    // Display Icon
+
+    // Returns the icon state to display above the NPC based on current game state.
+    protected override IconState GetIconState()
     {
-        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        {
-            StartNonSuspiciousSound();
-        }
-        yield return StartCoroutine(npcMovementController.ReachTarget(initialPosition, currentFloorLevel, initialFloorLevel));//ReachTarget(initialPosition, initialFloorLevel));
+        if (hasSeenPolterg) return IconState.Alert;
+        if (!investigationController.HasActiveInvestigation && SuspicionManager.Instance.HasSuspicionDecrease) return IconState.None;
+        if (hasSeenMovement && SuspicionManager.Instance.CurrentSuspicion > 0) return IconState.Alert;
+        if (investigationController.HasActiveInvestigation || investigationController.QueueCount > 0) return IconState.Investigation;
 
-        // Restore initial facing direction
-        //if(npcSpriteRenderer.flipX == initialFacingRight)
-        //{
-        //    npcSpriteRenderer.flipX = !initialFacingRight;
-        //    facingRight = false;
-        //    FlipFieldOfView();
-        //}
-        print("IM I FACING RIGHT? " + facingRight);
-        print("INITIAL FACING RIGHT" + initialFacingRight);
-        if (facingRight != initialFacingRight)
-        {
-            facingRight = initialFacingRight;
-            FlipFieldOfView();
-        }
-        //StopNonSuspiciousSound();
+        return IconState.None;
     }
 
+    // Reset
     public override void ResetInitialState()
     {
         base.ResetInitialState();
         StopAllCoroutines();
-        isAtInitialPosition = true;
+
+        investigationController.ResetState();
+        soundController.Reset();
+
         canSee = true;
-        seePolterg = false;
-        isInvestigating = false;
-        investigationQueue.Clear(); // Clear all the investigations he should be doing
-        hasActiveInvestigation = false;
-
-        hasSeenMovement = false;
-
-        if(alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.enabled = false;
-        }
-        fovLight.color = nonSuspiciousColorFOV;
-        // Reset sounds
-        if (nonSuspiciousSoundEvent != null)
-        {
-            nonSuspiciousSoundEvent.Stop(gameObject);
-        }
-        npcAnim.SetBool("InMovement", false);
-        npcAnimMouth.SetBool("IsSurprised", false);
+        hasSeenPolterg = false;
+        hasSeenMovement = false;       
         npcMovementController.Reset();
-        fovLight.color = nonSuspiciousColorFOV;
-        //print("INMOVEMENTFALSE!!!");
     }
 
+    // Resets only the polterg detection flag. Used when restarting from checkpoint
+    // without doing a full state reset.
     public void ResetSeePolterg()
     {
-        seePolterg = false;
+        hasSeenPolterg = false;
+    }
+
+    // Unsubscribe to prevent callbacks on destroyed objects
+    private void OnDisable()
+    {
+        investigationController.OnInvestigationStarted -= soundController.OnInvestigationStarted;
+        investigationController.OnInvestigationEnded -= soundController.OnInvestigationEnded;
     }
 
     private void OnDrawGizmos()

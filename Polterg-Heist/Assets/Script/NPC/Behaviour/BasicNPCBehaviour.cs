@@ -3,57 +3,50 @@ using System.Collections;
 using UnityEngine.Rendering.Universal;
 public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
 {
-    // NPC vision variables
+    // Base calss for all NPCs
+    // Handles:
+    // - Vision (field of view, detection)
+    // - Movement detection (possessed objects)
+    // - Initial state reset
+    // - Icon feedback via NPCIconDisplay
+
+
     [Header("Field of view")]
-    [SerializeField] protected float detectionRadius = 10f;  // NPC detection radius
-    [SerializeField] protected bool facingRight;        // Is the NPC Sprite facing right    
-    [SerializeField] protected LayerMask detectObjectLayer;   // Layer of objects to be detected by the NPC    
-    [SerializeField] protected LayerMask ignoreLayerSightBlocked;   // Layer to ignore when raycasting to check if the view is blocked
-    protected bool isObjectMoving;    // Is there an object moving in front of him?
-    protected bool isCurrentlyObserving;    // Is the NPC already watching an object moving?
-    protected float fieldOfViewAngle;
-    protected GameObject fieldOfView;
-    protected Light2D fovLight;
-    [SerializeField] protected Color nonSuspiciousColorFOV;//"00FF1A";
-    [SerializeField] protected Color alertColorFOV;
-    protected Quaternion initialFOVRotation;
+    [SerializeField] protected float detectionRadius = 10f;         // NPC detection radius
+    [SerializeField] protected bool facingRight;                    // Is the NPC Sprite facing right    
+    [SerializeField] protected LayerMask detectObjectLayer;         // Layers containing detectable objects by the NPC  
+    [SerializeField] protected LayerMask ignoreLayerSightBlocked;   // Layers ignored when checking line of sight
 
-    [Header("NPC global variables")]
-    [SerializeField] protected float currentFloorLevel;   // Floor where the npc is located
-    [SerializeField] protected SpriteRenderer alertSpriteRenderer;
-    [SerializeField] protected Sprite alertIcon;
-    protected float initialFloorLevel;
-    protected NPCMovementController npcMovementController;
-    protected SpriteRenderer npcSpriteRenderer;
-    protected Animator npcAnim;
-    protected Animator npcAnimMouth;
+    protected float fieldOfViewAngle = 180f;                        // Vision cone angle
+    protected bool isObjectMoving;                                  // True if a moving possessed object is currently detected
+    protected bool isCurrentlyObserving;                            // True if the NPC is actively watching a moving object 
 
+    protected GameObject fieldOfView;                               // Visual cone object
+    protected Light2D fovLight;                                     // Light representing vision cone
+    protected Quaternion initialFOVRotation;                        // Initial rotation of the FOV light
 
+    // Components
+    protected NPCMovementController npcMovementController;          // Handles NPC movement logic
+    protected SpriteRenderer npcSpriteRenderer;                     // NPC sprite renderer
+    protected Animator npcAnim;                                     // NPC Animator
+    protected NPCIconDisplay iconDisplay;                           // Handles UI icon feedback
 
-    // Initial variables
-    protected Vector3 initialPosition;  // Initial position of the NPC
-    protected Quaternion initialRotation;
-    protected bool initialFacingRight;  // He's he facing right or left
+    [Header("NPC State")]
+    [SerializeField] protected float currentFloorLevel;             // Current floor level of the NPC
+
+    protected float initialFloorLevel;                              // Initial floor level
+    protected Vector3 initialPosition;                              // Initial NPC position
+    protected Quaternion initialRotation;                           // Initial NPC rotation
+    protected bool initialFacingRight;                              // Initial facing direction
 
     [Header("NPC sound variables")]
-    [SerializeField] protected AK.Wwise.Event surpriseSoundEvent;
-    [SerializeField] protected AK.Wwise.Event nonSuspiciousSoundEvent;
-    [SerializeField] protected float soundCooldown = 1.5f;  // Cooldown between sound of surprise
-    protected float lastSoundTime;
-    protected GameObject lastMovingObject;
-    protected bool soundHasPlayed;
-
-    protected float nonSuspiciousSoundCooldown = 0f;//3f;  // Cooldown before restarting ambient sound
-    protected float lastSuspiciousTime;  // Last time something suspicious happened
-    protected bool isNonSuspiciousSoundPlaying = false;  // Is the ambient sound currently playing
-    protected Coroutine nonSuspiciousSoundCoroutine = null;
-
-
-    //Animation variables
-    [HideInInspector] public float directionX { get; set; }
+    [SerializeField] protected AK.Wwise.Event surpriseSoundEvent;   // Played when NPC detects something unexpected
 
     // Getters
     public float FloorLevel { get { return currentFloorLevel; } }
+
+    public float InitialFloorLevel => initialFloorLevel;
+    public Vector3 InitialPosition => initialPosition;
 
     public SpriteRenderer SpriteRenderer { get { return npcSpriteRenderer; } }
     public NPCMovementController NpcMovementController { get { return npcMovementController; } }
@@ -61,282 +54,132 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
 
     //Getters and Setters
     public bool FacingRight {  get { return facingRight; } set { facingRight = value; } }
-    public bool IniFacingRight { get { return initialFacingRight; } }
+    public bool InitialFacingRight { get { return initialFacingRight; } }
 
+    protected void Awake()
+    {
+        npcSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+    }
     protected virtual void Start()
     {
-        fieldOfViewAngle = 180f;
+        // Initialize detection state
         isCurrentlyObserving = false;
         isObjectMoving = false;
 
-        npcSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        //npcSpriteRenderer = GetComponent<SpriteRenderer>();
         npcMovementController = GetComponent<NPCMovementController>();
-        if (TryGetComponent<Cat>(out Cat cat)) { npcAnim = GetComponentInChildren<Animator>(); }
-        else 
-        {
-            npcAnim = GetComponentInChildren<Animator>();
-            npcAnimMouth = npcAnim.transform.GetChild(0).GetComponentInChildren<Animator>();
-
-        }
-        //print(this.gameObject.name);
-        //print("ANIM" + npcAnim.gameObject.name);
+        npcAnim = GetComponentInChildren<Animator>();
         fieldOfView = transform.GetChild(0).gameObject;
         fovLight = GetComponentInChildren<Light2D>();
+        iconDisplay = GetComponent<NPCIconDisplay>();
 
+        // Save initial state
         initialPosition = transform.position;
         initialRotation = transform.rotation;
-        initialFacingRight = facingRight;//!npcSpriteRenderer.flipX;
+        initialFacingRight = facingRight;
         initialFloorLevel = currentFloorLevel;
-        directionX = 0;
-
-        // Initialize sound tracking variables
-        lastMovingObject = null;
-        soundHasPlayed = false;
-        lastSoundTime = -soundCooldown;
-
-        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
-
         initialFOVRotation = fovLight.transform.rotation;
     }
     protected virtual void Update()
     {
         DetectMovingObjects();
+        UpdateIconDisplay();
     }
 
-    // Movement detection of the NPC
+    // Runs a scan each frame and dispatches the result to OnDetectionResult().
     protected virtual void DetectMovingObjects()
     {
-        bool wasObjectMoving = isObjectMoving;
-        isObjectMoving = false;
-        float objectSize = 0f;
+        DetectionResult result = ScanForMovingObject();
+        isObjectMoving = result.foundMovingObject;
+        OnDetectionResult(result);
+    }
+
+    // Scans all objects in detection radius and checks:
+    // 1. Is the object within the FOV cone angle?
+    // 2. Is the line of sight blocked by an object?
+    // 3. Is the object a possessed object that is currently moving?
+    // Returns a DetectionResult summarizing what was found.
+    protected DetectionResult ScanForMovingObject()
+    {
+        bool wasMoving = isObjectMoving;
         bool foundMovingObject = false;
         GameObject currentMovingObject = null;
+        float objectSize = 0f;
+        float objectWidth = 0f;
+        float objectHeight = 0f;
 
-        // Find all the possible possessed object in the room
+        // Find all the possible possessed object in the NPC radius
         Collider2D[] objects = Physics2D.OverlapCircleAll(transform.position, detectionRadius, detectObjectLayer);
         foreach (Collider2D obj in objects)
         {
-            if(obj == null) continue;
+            if (obj == null) continue;
 
-            if (this.IsObjectInFieldOfView(obj))
+            // Skip objects outside the FOV cone
+            if (!IsObjectInFieldOfView(obj)) continue;
+
+            // Skip objects with a blocked line of sight
+            RaycastHit2D hit = Physics2D.Raycast(
+                transform.position,
+                (obj.transform.position - transform.position).normalized,
+                detectionRadius,
+                ~ignoreLayerSightBlocked);
+
+            if (hit.collider == null || hit.collider != obj) continue;
+
+            // Measure object size for suspicion scaling
+            Renderer objRenderer = obj.GetComponentInChildren<Renderer>();
+            objectWidth = objRenderer.bounds.size.x;
+            objectHeight = objRenderer.bounds.size.y;
+            objectSize = Mathf.Max(objectWidth, objectHeight);
+
+
+            // Is the object actively being moved by the player
+            PossessionController possessedObject = obj.GetComponent<PossessionController>();
+            if (possessedObject != null && possessedObject.IsMoving)
             {
-                //print("NOM DE L'OBJET " + obj.gameObject.name);
-                // Check if there is no object blocking the sight of the NPC
-                RaycastHit2D hit = Physics2D.Raycast(transform.position, (obj.transform.position - transform.position).normalized, detectionRadius, ~ignoreLayerSightBlocked);
-
-                // Is the path from the npc to the object clear?
-                if (hit.collider != null && hit.collider == obj)
-                {
-                    // Get object size
-                    //Renderer objRenderer = obj.GetComponent<Renderer>();
-                    //print("NOM DE L'OBJET " + obj.gameObject.name);
-                    Renderer objRenderer;
-                    objRenderer = obj.GetComponentInChildren<Renderer>();
-                    /*if (obj.transform.GetChild(0).GetChild(0).TryGetComponent<Renderer>(out objRenderer)) { }
-                    else if (obj.transform.GetChild(0).TryGetComponent<Renderer>(out objRenderer)) { }
-                    else if (obj.TryGetComponent<Renderer>(out objRenderer)) { }*/
-                    
-                    objectSize = Mathf.Max(objRenderer.bounds.size.x, objRenderer.bounds.size.y);
-
-                    // Check if the object is moving
-                    PossessionController possessedObject = obj.GetComponent<PossessionController>();
-
-                    if (possessedObject != null)
-                    {
-                        //print("NON NULLLL");
-                        // Check if the object is moving in front of him
-                        if (possessedObject.IsMoving)
-                        {
-                            if(!wasObjectMoving)
-                            {
-                                StopNonSuspiciousSound();
-                            }
-                            print(possessedObject.gameObject.name);
-                            isObjectMoving = true;
-                            foundMovingObject = true;
-                            currentMovingObject = possessedObject.gameObject;
-
-                            //if(alertIcon != null)
-                            //{
-                            //    alertIcon.enabled = true;
-                            //}
-
-                            HandleSoundEvent(currentMovingObject);
-                            //soundEvent.Post(gameObject);
-                        }
-
-                        //HandleChangedPositionSuspicion(possessedObject, objectSize);
-                    }
-
-
-                }
-                else if(hit.collider != null)
-                {
-                    //print(hit.collider.gameObject.name);
-                }
+                foundMovingObject = true;
+                currentMovingObject = possessedObject.gameObject;
             }
         }
-        // Object stopped moving
-        if(!foundMovingObject && lastMovingObject != null)
-        {
-            //lastMovingObject = null;
-            soundHasPlayed = false;
 
-            //if(alertIcon != null && isObjectMoving == false)
-            //{
-            //    alertIcon.enabled = false;
-            //}
-        }
-
-        //if(wasObjectMoving && !isObjectMoving)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-        //else if(!wasObjectMoving && !isObjectMoving && !isNonSuspiciousSoundPlaying)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-
-        HandleMovementSuspicion(objectSize);
-    }
-    protected virtual void HandleChangedPositionSuspicion(PossessionController possessedObject, float objectSize)
-    {
-        // Empty default implementation
-        // Will be override in HumanNPCBehaviour
+        return new DetectionResult(foundMovingObject, wasMoving, currentMovingObject, objectSize, objectWidth, objectHeight);
     }
 
-    protected virtual void HandleMovementSuspicion(float objectSize)
-    {
-        // Empty default implementation
-        // Will be override in HumanNPCBehaviour
-    }
+    // Override this in child classes to define behavior when detection changes.
+    protected virtual void OnDetectionResult(DetectionResult result) { }
 
+    // Returns true if the object is within the NPC's FOV.
     protected virtual bool IsObjectInFieldOfView(Collider2D obj)
     {
-        // Check if the object is in the line of sight of the NPC
         Vector2 directionToObject = (obj.transform.position - transform.position).normalized;
         float angle = Vector2.Angle(facingRight ? Vector2.right : Vector2.left, directionToObject);
         return angle <= fieldOfViewAngle / 2;
     }
 
+    // Updates the NPC's tracked floor level.
     public void UpdateFloorLevel(float currenrFloorLevel)
     {
         currentFloorLevel = currenrFloorLevel;
     }
 
-    public void FlipFieldOfView()
+    // Sets the NPC facing direction
+    public void SetFacingDirection(bool faceRight)
     {
-        //directionX = facingRight ? -1f : 1f;
-
-        if (GetComponentInChildren<NPCSpriteManager>() == null)
-        {
-            Vector3 rotationDegrees = fieldOfView.transform.eulerAngles;
-            float newZ = facingRight ? -90f : 90f;
-            fieldOfView.transform.localRotation = Quaternion.Euler(0, 0, newZ);
-        }
-
-        //Vector3 rotationDegrees = fieldOfView.transform.eulerAngles;
-        //float newZ = facingRight ? -90f : 90f;
-        //fieldOfView.transform.localRotation = Quaternion.Euler(0, 0, newZ);
-
-        //float currentZ = Mathf.Round(rotationDegrees.z);
-        //float newZ = currentZ == 90 ? -90 : 90;
-        //rotationDegrees.z = -rotationDegrees.z;
+        facingRight = faceRight;
     }
 
-    // Manage the sound made by the NPC when he sees an object moving
-    protected virtual void HandleSoundEvent(GameObject currentMovingObject)
+    // Calls iconDisplay to display the current icon state.
+    protected void UpdateIconDisplay()
     {
-        // Check if we are past the cooldown
-        bool cooldownElapsed = (Time.time - lastSoundTime) >= soundCooldown;
-        //print(cooldownElapsed);
-        // Case 1: Different object than before - play sound if cooldown has elapsed
-        bool isDifferentObject = lastMovingObject != currentMovingObject;
-
-        // If it's a different object than the last one we tracked, play the sound
-        if (lastMovingObject != currentMovingObject)
-        {
-            surpriseSoundEvent.Post(gameObject);
-            npcAnimMouth.SetTrigger("IsSurprised");
-            lastMovingObject = currentMovingObject;
-            soundHasPlayed = true;
-            lastSoundTime = Time.time;
-        }
-        // If it's the same object but it had stopped and started again, play the sound
-        else if(lastMovingObject == currentMovingObject && !soundHasPlayed && cooldownElapsed)
-        {
-            surpriseSoundEvent.Post(gameObject);
-            npcAnimMouth.SetTrigger("IsSurprised");
-            soundHasPlayed = true;
-            lastSoundTime = Time.time;
-        }
-        // Otherwise, it's the same object still moving, so don't play the sound again
+        if (iconDisplay != null)
+            iconDisplay.UpdateIcon(GetIconState());
     }
 
-    protected virtual void StartNonSuspiciousSound()
+    // Returns the icon state to display above the NPC.
+    // Override in subclasses to provide class-specific logic.
+    protected virtual IconState GetIconState()
     {
-        if(nonSuspiciousSoundCoroutine != null)
-        {
-            return;
-        }
-        nonSuspiciousSoundCoroutine = StartCoroutine(PlayNonSuspiciousSound());
-        //if(!isNonSuspiciousSoundPlaying && nonSuspiciousSoundCoroutine == null)
-        //{
-        //    nonSuspiciousSoundCoroutine = StartCoroutine(PlayNonSuspiciousSound());
-        //}
+        return IconState.None;
     }
-
-    protected virtual IEnumerator PlayNonSuspiciousSound()
-    {
-        // Wait for the cooldown period
-        float timeToWait = Mathf.Max(0, (lastSuspiciousTime + nonSuspiciousSoundCooldown) - Time.time);
-        if (timeToWait > 0)
-        {
-            yield return new WaitForSeconds(timeToWait);
-        }
-
-        // Check if we should still play the sound (nothing happened during the waiting time)
-        if (CanPlayNonSuspiciousSound())
-        {
-            if(nonSuspiciousSoundEvent != null)
-            {
-                nonSuspiciousSoundEvent.Post(gameObject);
-                //alertIcon.enabled = false;
-            }
-            isNonSuspiciousSoundPlaying = true;
-        }
-        else
-        {
-            nonSuspiciousSoundCoroutine = null;
-        }
-
-
-    }
-
-    protected virtual void StopNonSuspiciousSound()
-    {
-        if (isNonSuspiciousSoundPlaying && nonSuspiciousSoundEvent != null)
-        {
-            nonSuspiciousSoundEvent.Stop(gameObject);
-            isNonSuspiciousSoundPlaying = false;
-        }
-
-        if (nonSuspiciousSoundCoroutine != null)
-        {
-            StopCoroutine(nonSuspiciousSoundCoroutine);
-            nonSuspiciousSoundCoroutine = null;
-        }
-
-        lastSuspiciousTime = Time.time;
-    }
-
-    protected virtual bool CanPlayNonSuspiciousSound()
-    {
-        // Base condition - no moving objects
-        return !isObjectMoving;
-    }
-
 
     // Debug method only
     private void OnDrawGizmos()
@@ -345,31 +188,48 @@ public abstract class BasicNPCBehaviour : MonoBehaviour, IResetInitialState
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
     }
 
+    // Restores the NPC to its initial state at scene start.
     public virtual void ResetInitialState()
     {
         this.transform.position = initialPosition;
         this.transform.rotation = initialRotation;
         facingRight = initialFacingRight;
-        //npcSpriteRenderer.flipX = !facingRight;
         currentFloorLevel = initialFloorLevel;
-        // Reset icon movement detection
-        if(alertSpriteRenderer != null)
-        {
-            alertSpriteRenderer.enabled = false;
-        }
-        fovLight.color = nonSuspiciousColorFOV;
+
         Vector3 rotationDegrees = fieldOfView.transform.eulerAngles;
         rotationDegrees.z = facingRight ? -90f : 90f;
         fieldOfView.transform.eulerAngles = rotationDegrees;
         fovLight.transform.rotation = initialFOVRotation;
-        lastMovingObject = null;
-        soundHasPlayed = false;
 
-        StopNonSuspiciousSound();
-        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
-        isNonSuspiciousSoundPlaying = false;
-        fovLight.color = nonSuspiciousColorFOV;
+        if (iconDisplay != null)
+            iconDisplay.Reset();
         StopAllCoroutines();
-        //StartNonSuspiciousSound();
+    }
+}
+
+// Result of each detection scan made each frame
+public readonly struct DetectionResult
+{
+    public readonly bool foundMovingObject;     // True if a moving possessed object was detected this frame
+    public readonly bool wasAlreadyMoving;      // True if a moving object was detected last frame
+    public readonly GameObject movingObject;    // The moving object detected
+    public readonly float objectSize;           // Largest dimension of the detected object (used for suspicion scaling)
+    public readonly float objectWidth;          // Width of the detected object
+    public readonly float objectHeight;         // Height of the detected object
+
+    public DetectionResult(
+        bool isObjectMoving,
+        bool wasMoving,
+        GameObject obj,
+        float size,
+        float width = 0f,
+        float height = 0f)
+    {
+        foundMovingObject = isObjectMoving;
+        wasAlreadyMoving = wasMoving;
+        movingObject = obj;
+        objectSize = size;
+        objectWidth = width;
+        objectHeight = height;
     }
 }

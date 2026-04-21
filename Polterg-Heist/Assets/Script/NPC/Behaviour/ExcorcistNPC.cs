@@ -23,9 +23,9 @@ public class ExcorcistNPC : PatrollingNPCBehaviour
                     PlayerController player = obj.GetComponent<PlayerController>();
                     if(player != null)
                     {
-                        if (!seePolterg)
+                        if (!hasSeenPolterg)
                         {
-                            seePolterg = true;
+                            hasSeenPolterg = true;
                             NPCSeePolterg();
                         }
                         //audioSource.PlayOneShot(audioSource.clip);

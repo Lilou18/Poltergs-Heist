@@ -1,36 +1,36 @@
-using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Interface for objects emitting sound that must be reset
+// after their sound event.
 public interface IResetObject
 {
     public void ResetObject();
 }
 public abstract class SoundDetection : MonoBehaviour
 {
-    // Manage the detection of the sounds
+    // Base class for objects that emit sounds detectable by nearby NPCs.
+    // When a sound event occurs, notifies all HumanNPCBehaviour instances within range.
+    // Only the first NPC in the list is asked to replace the object after investigating.
 
-    [SerializeField] protected float soundRadius;       // Radius in which the sound is projected
+    [SerializeField] protected float soundRadius;       // Radius within which NPCs can hear this object
     [SerializeField] protected LayerMask npcLayer;      // Layer of the NPCs who must be alerted by the sound
-    [SerializeField] protected float floorLevel;        // On which floor level is the object
-    protected bool firstNPCNotified = false;            // Is there an NPC that was already notified of the sound
-    protected SoundEmittingObject objectType;           // Which object type is the object
+    [SerializeField] protected float floorLevel;        // Floor level of this object
 
-    protected AudioSource audioSource;
+    protected SoundEmittingObject objectType;           // Type of sound-emitting object
 
     // Getters
     public SoundEmittingObject ObjectType => objectType;
     public float FloorLevel => floorLevel;
 
-    protected virtual void Start()
-    {
-        audioSource = GetComponent<AudioSource>();
-    }
 
-    // Notify every enemies in the zone of the sound
-    protected void NotifyNearbyEnemies(SoundDetection objectSound)
+    // Notifies all nearby NPCs of this sound event.
+    // The first NPC notified can be instructed to replace the object
+    // or stop the sound while the others just go investigate.
+    // If no available NPCs exist, blocked NPCs are notified instead.
+    protected void NotifyNearbyEnemies()
     {
-        // Find all NPC within range
+        // Find all NPC within sound range
         Collider2D[] colliderNearbyNPC = Physics2D.OverlapCircleAll(transform.position, soundRadius, npcLayer);
 
         List<HumanNPCBehaviour> availableNPCs = new List<HumanNPCBehaviour>();
@@ -45,38 +45,34 @@ public abstract class SoundDetection : MonoBehaviour
                 // Check if the NPC is blocked
                 if(npcPatrol != null && (npcPatrol.IsBlocked || npcPatrol.IsInRoom))
                 {
-                    //print("not available");
                     blockedNPCs.Add(npcPatrol);
                 }
                 else
                 {
-                    //print("Avaialble");
-                    // The NPC is availabe to go an investigate
+                    // The NPC is availabe to go and investigate
                     availableNPCs.Add(npc);
                 }
             }
         }
 
-        if(availableNPCs.Count > 0)
-        {
-            NotifyNPCs(availableNPCs, floorLevel, objectSound);
-        }
-        else if(blockedNPCs.Count > 0)
-        {
-            // Every NPCs are blocked
-            NotifyNPCs(blockedNPCs, floorLevel, objectSound);
-        }
+        // Prefer available NPCs to replace or stop the sound, but fall back to blocked ones if they are all blocked.
+        // Otherwise we ignore the blocked
+        List<HumanNPCBehaviour> candidateNPCs = availableNPCs.Count > 0 ? availableNPCs : blockedNPCs;
+        if (candidateNPCs.Count > 0)
+            NotifyNPCs(candidateNPCs);
     }
 
-    private void NotifyNPCs(List<HumanNPCBehaviour> npcsList, float floorLevel, SoundDetection objectSound)
+    // Sends investigation requests to each NPC in the list.
+    // Only the first NPC is asked to replace the object or stop the sound after investigating.
+    // The reste only happens if the object is an IResetObject.
+    private void NotifyNPCs(List<HumanNPCBehaviour> npcsList)
     {
-        foreach(HumanNPCBehaviour npc in npcsList)
-        {
-            bool isFirst = !firstNPCNotified;
-            npc.InvestigateSound(objectSound,isFirst,floorLevel);
-            firstNPCNotified = true;
+        bool isFirst = true;
+        foreach (HumanNPCBehaviour npc in npcsList)
+        {            
+            npc.InvestigateSound(this, isFirst, floorLevel);
+            isFirst = false;
         }
-        firstNPCNotified = false;
     }
 
     protected void OnDrawGizmosSelected()
@@ -87,6 +83,7 @@ public abstract class SoundDetection : MonoBehaviour
 
 }
 
+// Every type of sound emitting object in the game
 public enum SoundEmittingObject
 {
     FallingObject,

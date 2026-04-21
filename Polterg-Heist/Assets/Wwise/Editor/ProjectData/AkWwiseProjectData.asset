@@ -24,7 +24,7 @@ MonoBehaviour:
     ParentPath: Virtual Acoustics\Default Work Unit
     guid: 9d5010a5cee3264eb10f11faafa0bb06
     GuidInternal: 
-    m_lastTime: -8584578913928867842
+    m_lastTime: -8584535054638046219
     List: []
   AuxBusWwu:
   - PhysicalPath: Master-Mixer Hierarchy\Default Work Unit.wwu
@@ -38,7 +38,7 @@ MonoBehaviour:
     ParentPath: Master-Mixer Hierarchy\Default Work Unit
     guid: c23e1d7182510c47ac9c86c3ec1dd706
     GuidInternal: 
-    m_lastTime: -8584560855359786783
+    m_lastTime: -8584535054664435555
     List:
     - name: Gramophone
       guid: b7d6454ad45fea44af7a4056fd847c4a
@@ -120,7 +120,7 @@ MonoBehaviour:
     ParentPath: SoundBanks\Default Work Unit
     guid: 3592dfa2d40267489fbbbc121975ef5c
     GuidInternal: 
-    m_lastTime: -8584578008153931026
+    m_lastTime: -8584535054638066338
     List:
     - name: main
       guid: 286de865a18bd3498b6798495a6b0d5f
@@ -148,7 +148,7 @@ MonoBehaviour:
     ParentPath: Events\Default Work Unit
     guid: eaf8ae6ee9c7f44b9005b089581ca3bb
     GuidInternal: 
-    m_lastTime: -8584558001469874381
+    m_lastTime: -8584535054671913096
     List:
     - name: Doors
       guid: efcee1e45e52cd4da44768755966ea9f
@@ -225,8 +225,8 @@ MonoBehaviour:
         guid: b3fb93e00eb0bf4c80c08939ad0dcfa2
       Path: Events\Default Work Unit\MUS\MUS_House
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: MUS_Menu
       guid: 9c5bd3f45a636942b6bc72f7a3755a6a
       id: 3149643052
@@ -245,8 +245,8 @@ MonoBehaviour:
         guid: 9c5bd3f45a636942b6bc72f7a3755a6a
       Path: Events\Default Work Unit\MUS\MUS_Menu
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: MUS_Museum
       guid: c5e124c5b273cd48a59b137bfd755772
       id: 1081012053
@@ -265,8 +265,8 @@ MonoBehaviour:
         guid: c5e124c5b273cd48a59b137bfd755772
       Path: Events\Default Work Unit\MUS\MUS_Museum
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: MUS_Start
       guid: b0a711da79c7e347a9a583eda8d9e7d0
       id: 1973954843
@@ -285,8 +285,8 @@ MonoBehaviour:
         guid: b0a711da79c7e347a9a583eda8d9e7d0
       Path: Events\Default Work Unit\MUS\MUS_Start
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: MUS_Win
       guid: 6a47eabca8ab4a4c9144a1ada4b3ecc0
       id: 804414033
@@ -305,8 +305,8 @@ MonoBehaviour:
         guid: 6a47eabca8ab4a4c9144a1ada4b3ecc0
       Path: Events\Default Work Unit\MUS\MUS_Win
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: Museum
       guid: b5d85200d09065479372803669e9596b
       id: 1362148849
@@ -382,8 +382,8 @@ MonoBehaviour:
         guid: 3079c6745d533a449406f16ff2d2bac4
       Path: Events\Default Work Unit\PLY\PLY_Hovering
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: PLY_Jump
       guid: 92431f07efbf7d41893879851b8b6750
       id: 4285040421
@@ -402,8 +402,8 @@ MonoBehaviour:
         guid: 92431f07efbf7d41893879851b8b6750
       Path: Events\Default Work Unit\PLY\PLY_Jump
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.330875
+      minDuration: 0.306375
     - name: PLY_JumpBounce
       guid: e3188b884fe9df42bea026476adacb9b
       id: 638840749
@@ -422,8 +422,8 @@ MonoBehaviour:
         guid: e3188b884fe9df42bea026476adacb9b
       Path: Events\Default Work Unit\PLY\PLY_JumpBounce
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.1397083
+      minDuration: 0.85170835
     - name: SFX
       guid: db137fb99900914cbbe003c24a05fc00
       id: 393239870
@@ -462,8 +462,8 @@ MonoBehaviour:
         guid: 6a345e11626b454ab886bb4c9a158a69
       Path: Events\Default Work Unit\SFX\Museum\SFX_Airplane
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_ArcheologyRack
       guid: dc3052182e9e0a448f73340b2061966e
       id: 2341548939
@@ -485,8 +485,8 @@ MonoBehaviour:
         guid: dc3052182e9e0a448f73340b2061966e
       Path: Events\Default Work Unit\SFX\Museum\SFX_ArcheologyRack
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_ArmorDisplay
       guid: 8fea853385f07b48bbdd02fd3462255a
       id: 2979590924
@@ -508,8 +508,8 @@ MonoBehaviour:
         guid: 8fea853385f07b48bbdd02fd3462255a
       Path: Events\Default Work Unit\SFX\Museum\SFX_ArmorDisplay
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_Ball
       guid: 171ffc4c0de90b47b174fa55af8880ff
       id: 1639431926
@@ -531,8 +531,8 @@ MonoBehaviour:
         guid: 171ffc4c0de90b47b174fa55af8880ff
       Path: Events\Default Work Unit\SFX\House\SFX_Ball
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_BallFall
       guid: c107132e22037e4291287e6fb42dc093
       id: 314783149
@@ -554,8 +554,8 @@ MonoBehaviour:
         guid: c107132e22037e4291287e6fb42dc093
       Path: Events\Default Work Unit\SFX\House\SFX_BallFall
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.41666666
+      minDuration: 0.1348125
     - name: SFX_BallJump
       guid: eefe89447ec9284880058ced639bb69e
       id: 3288483358
@@ -577,8 +577,8 @@ MonoBehaviour:
         guid: eefe89447ec9284880058ced639bb69e
       Path: Events\Default Work Unit\SFX\House\SFX_BallJump
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.330875
+      minDuration: 0.306375
     - name: SFX_Bed
       guid: 1084bba13bb344439762227d79b2d481
       id: 4240001378
@@ -600,8 +600,8 @@ MonoBehaviour:
         guid: 1084bba13bb344439762227d79b2d481
       Path: Events\Default Work Unit\SFX\House\SFX_Bed
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_BoneDisplay
       guid: 89811a6f91b3e54ba7e17bfc4c03ae44
       id: 1596249399
@@ -623,8 +623,8 @@ MonoBehaviour:
         guid: 89811a6f91b3e54ba7e17bfc4c03ae44
       Path: Events\Default Work Unit\SFX\Museum\SFX_BoneDisplay
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_Bookshelf
       guid: 3bc5b09cd6c1cb43bc0e7f5b997f3f26
       id: 3256198414
@@ -646,8 +646,8 @@ MonoBehaviour:
         guid: 3bc5b09cd6c1cb43bc0e7f5b997f3f26
       Path: Events\Default Work Unit\SFX\House\SFX_Bookshelf
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_BookshelfFall
       guid: a2c34730183d8a4589eb3a63fb5a9961
       id: 79086085
@@ -669,8 +669,8 @@ MonoBehaviour:
         guid: a2c34730183d8a4589eb3a63fb5a9961
       Path: Events\Default Work Unit\SFX\House\SFX_BookshelfFall
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.3051459
+      minDuration: 0.6617708
     - name: SFX_Box
       guid: 246055db2879ab4e8d0324fd8f33712e
       id: 45699584
@@ -692,8 +692,8 @@ MonoBehaviour:
         guid: 246055db2879ab4e8d0324fd8f33712e
       Path: Events\Default Work Unit\SFX\House\SFX_Box
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_CageClosed
       guid: 7545c24b0a9139449cf7f247cbe22506
       id: 420178041
@@ -712,8 +712,8 @@ MonoBehaviour:
         guid: 7545c24b0a9139449cf7f247cbe22506
       Path: Events\Default Work Unit\SFX\SFX_CageClosed
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.4031875
+      minDuration: 1.0416666
     - name: SFX_CantMove
       guid: 23215ca5f4baff49b932427a066d53fc
       id: 3980636124
@@ -732,8 +732,8 @@ MonoBehaviour:
         guid: 23215ca5f4baff49b932427a066d53fc
       Path: Events\Default Work Unit\SFX\SFX_CantMove
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.9375
+      minDuration: 0.6914167
     - name: SFX_CatSlap
       guid: c57885b84d0e4540a9ffdd6661b28b1c
       id: 801776781
@@ -752,8 +752,8 @@ MonoBehaviour:
         guid: c57885b84d0e4540a9ffdd6661b28b1c
       Path: Events\Default Work Unit\SFX\SFX_CatSlap
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.0000008
+      minDuration: 0.42251542
     - name: SFX_Checkpoint
       guid: 0b79d67d3ead69499999a32c5c0aadb9
       id: 24284063
@@ -772,8 +772,8 @@ MonoBehaviour:
         guid: 0b79d67d3ead69499999a32c5c0aadb9
       Path: Events\Default Work Unit\SFX\SFX_Checkpoint
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.70720834
+      minDuration: 0.70720834
     - name: SFX_CookieJar
       guid: e632c4b59a505649a42e925c6b307139
       id: 3916115538
@@ -795,8 +795,8 @@ MonoBehaviour:
         guid: e632c4b59a505649a42e925c6b307139
       Path: Events\Default Work Unit\SFX\House\SFX_CookieJar
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_CookieJarFall
       guid: 632b7ea51ffd074f8f34dc0daae89c6b
       id: 627751985
@@ -818,8 +818,8 @@ MonoBehaviour:
         guid: 632b7ea51ffd074f8f34dc0daae89c6b
       Path: Events\Default Work Unit\SFX\House\SFX_CookieJarFall
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.5156444
+      minDuration: 0.74241555
     - name: SFX_Couch
       guid: 35e72b3d8d71c542a1c50771f88e8b38
       id: 3154666949
@@ -841,8 +841,8 @@ MonoBehaviour:
         guid: 35e72b3d8d71c542a1c50771f88e8b38
       Path: Events\Default Work Unit\SFX\House\SFX_Couch
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_CouchFall
       guid: 97daf88a9b390247a033291c80716faa
       id: 3852483018
@@ -864,8 +864,8 @@ MonoBehaviour:
         guid: 97daf88a9b390247a033291c80716faa
       Path: Events\Default Work Unit\SFX\House\SFX_CouchFall
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.3051459
+      minDuration: 0.6617708
     - name: SFX_DinosaurDisplay
       guid: d586ae06bd959d40bfc9c4c0c30b2d7c
       id: 3310451126
@@ -887,8 +887,8 @@ MonoBehaviour:
         guid: d586ae06bd959d40bfc9c4c0c30b2d7c
       Path: Events\Default Work Unit\SFX\Museum\SFX_DinosaurDisplay
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_Doll
       guid: 76d6be4ead2da54486a8eb1a61a0868f
       id: 1756072638
@@ -910,8 +910,8 @@ MonoBehaviour:
         guid: 76d6be4ead2da54486a8eb1a61a0868f
       Path: Events\Default Work Unit\SFX\House\SFX_Doll
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_DollFall
       guid: b23fbcbbcb632c4a8ed6a097d1a1220f
       id: 835919349
@@ -933,8 +933,8 @@ MonoBehaviour:
         guid: b23fbcbbcb632c4a8ed6a097d1a1220f
       Path: Events\Default Work Unit\SFX\House\SFX_DollFall
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.823402
+      minDuration: 0.23701015
     - name: SFX_DoorClose
       guid: ed9dfbebac03c948b41f60cebd1e8e27
       id: 322520319
@@ -955,9 +955,9 @@ MonoBehaviour:
         ObjectType: 3
         guid: ed9dfbebac03c948b41f60cebd1e8e27
       Path: Events\Default Work Unit\SFX\Doors\SFX_DoorClose
-      maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxAttenuation: 40
+      maxDuration: 0.8210833
+      minDuration: 0.5453333
     - name: SFX_DoorEnd
       guid: 07045f344f253d46b86e67495fbb634a
       id: 3048444812
@@ -979,8 +979,8 @@ MonoBehaviour:
         guid: 07045f344f253d46b86e67495fbb634a
       Path: Events\Default Work Unit\SFX\Doors\SFX_DoorEnd
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 11.778656
+      minDuration: 3.4171314
     - name: SFX_DoorLocked
       guid: 4cd9d3c4c7853d4181f345e01a713215
       id: 3823775963
@@ -1002,8 +1002,8 @@ MonoBehaviour:
         guid: 4cd9d3c4c7853d4181f345e01a713215
       Path: Events\Default Work Unit\SFX\Doors\SFX_DoorLocked
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 2.7826307
+      minDuration: 0.9310935
     - name: SFX_DoorOpen
       guid: 5aa5e6768556aa46b4b74b080e6c0aaf
       id: 607923225
@@ -1024,9 +1024,9 @@ MonoBehaviour:
         ObjectType: 3
         guid: 5aa5e6768556aa46b4b74b080e6c0aaf
       Path: Events\Default Work Unit\SFX\Doors\SFX_DoorOpen
-      maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxAttenuation: 40
+      maxDuration: 1.4705833
+      minDuration: 0.8701042
     - name: SFX_DoorUnlocked
       guid: c8b2701e0fce704c8e8ba2c42c115b2a
       id: 2575443418
@@ -1048,8 +1048,8 @@ MonoBehaviour:
         guid: c8b2701e0fce704c8e8ba2c42c115b2a
       Path: Events\Default Work Unit\SFX\Doors\SFX_DoorUnlocked
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.3167651
+      minDuration: 0.69475543
     - name: SFX_FlowerPotFall
       guid: f3e115e6bfb9294eb89998af8e818c7b
       id: 810154590
@@ -1071,8 +1071,8 @@ MonoBehaviour:
         guid: f3e115e6bfb9294eb89998af8e818c7b
       Path: Events\Default Work Unit\SFX\Museum\SFX_FlowerPotFall
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 2.0343125
+      minDuration: 0.96814585
     - name: SFX_FS_NPC
       guid: c96f547de640124ebe8beeed0b34aced
       id: 3753760176
@@ -1093,9 +1093,9 @@ MonoBehaviour:
         ObjectType: 3
         guid: c96f547de640124ebe8beeed0b34aced
       Path: Events\Default Work Unit\SFX\NPC\SFX_FS_NPC
-      maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxAttenuation: 70
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_MouseDoorClose
       guid: 3a50a7038b46864a9f67c003db1e7d72
       id: 1379830662
@@ -1117,8 +1117,8 @@ MonoBehaviour:
         guid: 3a50a7038b46864a9f67c003db1e7d72
       Path: Events\Default Work Unit\SFX\Doors\SFX_MouseDoorClose
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.3119909
+      minDuration: 0.13814987
     - name: SFX_MouseDoorOpen
       guid: 26687671842fdc4d8cd98e4a30b0e345
       id: 1320098642
@@ -1140,8 +1140,8 @@ MonoBehaviour:
         guid: 26687671842fdc4d8cd98e4a30b0e345
       Path: Events\Default Work Unit\SFX\Doors\SFX_MouseDoorOpen
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.2739331
+      minDuration: 0.116525695
     - name: SFX_MusicPlay
       guid: 7fd002d4aa03304f9f2f4af2db44423a
       id: 2184676100
@@ -1162,9 +1162,9 @@ MonoBehaviour:
         ObjectType: 3
         guid: 7fd002d4aa03304f9f2f4af2db44423a
       Path: Events\Default Work Unit\SFX\Museum\SFX_MusicPlay
-      maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxAttenuation: 40
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_NPC_CatSlap
       guid: a2678be97983f5428e7b6987466255ac
       id: 1591108753
@@ -1186,8 +1186,8 @@ MonoBehaviour:
         guid: a2678be97983f5428e7b6987466255ac
       Path: Events\Default Work Unit\SFX\NPC\SFX_NPC_CatSlap
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.9948334
+      minDuration: 1.9948334
     - name: SFX_Pillow
       guid: b0b301d434d4ad4a89d6f105074baee6
       id: 1831529430
@@ -1209,8 +1209,8 @@ MonoBehaviour:
         guid: b0b301d434d4ad4a89d6f105074baee6
       Path: Events\Default Work Unit\SFX\House\SFX_Pillow
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_PillowFall
       guid: 34a6e467560bc34cbc0b90b2d9f8ea8b
       id: 1772650125
@@ -1232,8 +1232,8 @@ MonoBehaviour:
         guid: 34a6e467560bc34cbc0b90b2d9f8ea8b
       Path: Events\Default Work Unit\SFX\House\SFX_PillowFall
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.823402
+      minDuration: 0.23701015
     - name: SFX_PillowJump
       guid: 6545b6ada5ccde4494aad55d669b36dc
       id: 493063166
@@ -1255,8 +1255,8 @@ MonoBehaviour:
         guid: 6545b6ada5ccde4494aad55d669b36dc
       Path: Events\Default Work Unit\SFX\House\SFX_PillowJump
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.330875
+      minDuration: 0.306375
     - name: SFX_PossessedOff
       guid: 96e768d0da029548bba0df94fa568eb8
       id: 2573730023
@@ -1275,8 +1275,8 @@ MonoBehaviour:
         guid: 96e768d0da029548bba0df94fa568eb8
       Path: Events\Default Work Unit\SFX\SFX_PossessedOff
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 2.1378422
+      minDuration: 1.6968064
     - name: SFX_PossessedOn
       guid: ce91400b4871824ab7e90d4d43a2d7fa
       id: 2243334675
@@ -1295,8 +1295,8 @@ MonoBehaviour:
         guid: ce91400b4871824ab7e90d4d43a2d7fa
       Path: Events\Default Work Unit\SFX\SFX_PossessedOn
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 2.2649648
+      minDuration: 1.6968064
     - name: SFX_ToolsDisplay
       guid: ce3550e2a9df644fb8afcf3870e157b6
       id: 376554820
@@ -1318,8 +1318,8 @@ MonoBehaviour:
         guid: ce3550e2a9df644fb8afcf3870e157b6
       Path: Events\Default Work Unit\SFX\Museum\SFX_ToolsDisplay
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: SFX_TrapDoorClose
       guid: f2715e8469e9544e8b81ec7ebccd37ad
       id: 2786674084
@@ -1341,8 +1341,8 @@ MonoBehaviour:
         guid: f2715e8469e9544e8b81ec7ebccd37ad
       Path: Events\Default Work Unit\SFX\Doors\SFX_TrapDoorClose
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.8701042
+      minDuration: 0.8701042
     - name: SFX_TrapDoorOpen
       guid: e6af0c45882d3b4292a1bd1354500e33
       id: 334605088
@@ -1364,8 +1364,8 @@ MonoBehaviour:
         guid: e6af0c45882d3b4292a1bd1354500e33
       Path: Events\Default Work Unit\SFX\Doors\SFX_TrapDoorOpen
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.3112708
+      minDuration: 1.3112708
     - name: SFX_WoodBox
       guid: 6b3ea96c8699f44b94f3bc2105d32bf4
       id: 690079769
@@ -1387,8 +1387,8 @@ MonoBehaviour:
         guid: 6b3ea96c8699f44b94f3bc2105d32bf4
       Path: Events\Default Work Unit\SFX\Museum\SFX_WoodBox
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: UI
       guid: bb8a03633d51fc43a32aab33d68d7eb9
       id: 1551306167
@@ -1424,8 +1424,8 @@ MonoBehaviour:
         guid: bf2ccc5937f7884499861300aa7bc9f6
       Path: Events\Default Work Unit\UI\UI_Defeat
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.0573334
+      minDuration: 1.0573334
     - name: UI_FowRemoved
       guid: 03c1e2f7d62b87498bd8ea2f45637cf8
       id: 2460324726
@@ -1444,8 +1444,8 @@ MonoBehaviour:
         guid: 03c1e2f7d62b87498bd8ea2f45637cf8
       Path: Events\Default Work Unit\UI\UI_FowRemoved
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.3267381
+      minDuration: 1.3267381
     - name: UI_KeyPickup
       guid: 2f29774b12d4094282d719e4bace66cb
       id: 1256418023
@@ -1464,8 +1464,8 @@ MonoBehaviour:
         guid: 2f29774b12d4094282d719e4bace66cb
       Path: Events\Default Work Unit\UI\UI_KeyPickup
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.2990209
+      minDuration: 1.2990209
     - name: UI_MouseOver
       guid: d0e30623e41e23498fcaf83f22873432
       id: 3809715957
@@ -1484,8 +1484,8 @@ MonoBehaviour:
         guid: d0e30623e41e23498fcaf83f22873432
       Path: Events\Default Work Unit\UI\UI_MouseOver
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.294125
+      minDuration: 0.294125
     - name: UI_ObjectPickup
       guid: 9e0dbb263343af418a3bd5c5f1326554
       id: 2030598959
@@ -1504,8 +1504,8 @@ MonoBehaviour:
         guid: 9e0dbb263343af418a3bd5c5f1326554
       Path: Events\Default Work Unit\UI\UI_ObjectPickup
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.8137292
+      minDuration: 1.8137292
     - name: UI_OnClick
       guid: 26d541703d95fc4583e93618e9d63756
       id: 2278053539
@@ -1524,8 +1524,8 @@ MonoBehaviour:
         guid: 26d541703d95fc4583e93618e9d63756
       Path: Events\Default Work Unit\UI\UI_OnClick
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.23283334
+      minDuration: 0.23283334
     - name: UI_Stars1
       guid: 7ff6a61014c3f640a1050bd59f9813a3
       id: 3747558390
@@ -1544,8 +1544,8 @@ MonoBehaviour:
         guid: 7ff6a61014c3f640a1050bd59f9813a3
       Path: Events\Default Work Unit\UI\UI_Stars1
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.9485208
+      minDuration: 1.9485208
     - name: UI_Stars2
       guid: 347e2a88d9b9954291f2f217daa2c7f6
       id: 3747558389
@@ -1564,8 +1564,8 @@ MonoBehaviour:
         guid: 347e2a88d9b9954291f2f217daa2c7f6
       Path: Events\Default Work Unit\UI\UI_Stars2
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 2.573521
+      minDuration: 2.573521
     - name: UI_Stars3
       guid: 798b42d89b828f498b7f7abb2161766c
       id: 3747558388
@@ -1584,8 +1584,8 @@ MonoBehaviour:
         guid: 798b42d89b828f498b7f7abb2161766c
       Path: Events\Default Work Unit\UI\UI_Stars3
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 3.498771
+      minDuration: 3.498771
     - name: UI_Stats
       guid: fe33ea76495f524094e724c7de3ae358
       id: 1252603975
@@ -1604,8 +1604,8 @@ MonoBehaviour:
         guid: fe33ea76495f524094e724c7de3ae358
       Path: Events\Default Work Unit\UI\UI_Stats
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 3.0024583
+      minDuration: 3.0024583
     - name: UI_Victory
       guid: ee75486d22a09e4197669f4c0394351f
       id: 3107961688
@@ -1624,8 +1624,8 @@ MonoBehaviour:
         guid: ee75486d22a09e4197669f4c0394351f
       Path: Events\Default Work Unit\UI\UI_Victory
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 5.604694
+      minDuration: 5.604694
     - name: VO
       guid: 9e59704f38d06e409b8abd8325c6ce19
       id: 1534528548
@@ -1660,9 +1660,9 @@ MonoBehaviour:
         ObjectType: 3
         guid: 4ed357cd75c54c4e93f3707735a72b87
       Path: Events\Default Work Unit\VO\VO_NPC_Cat
-      maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxAttenuation: 70
+      maxDuration: 3.1617708
+      minDuration: 1.568625
     - name: VO_NPC_CatChase
       guid: 119ec17b79d2934ba439629c745c74de
       id: 553568125
@@ -1681,8 +1681,8 @@ MonoBehaviour:
         guid: 119ec17b79d2934ba439629c745c74de
       Path: Events\Default Work Unit\VO\VO_NPC_CatChase
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 1.556375
+      minDuration: 0.8701042
     - name: VO_NPC_Curious
       guid: 2ab4ebc19a7d6540a88139c8c4ce36da
       id: 2127579795
@@ -1701,8 +1701,8 @@ MonoBehaviour:
         guid: 2ab4ebc19a7d6540a88139c8c4ce36da
       Path: Events\Default Work Unit\VO\VO_NPC_Curious
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.8333333
+      minDuration: 0.55147916
     - name: VO_NPC_Locked
       guid: 596a1d5d85e05f4584bdaeded7222ffa
       id: 1529802069
@@ -1720,9 +1720,9 @@ MonoBehaviour:
         ObjectType: 3
         guid: 596a1d5d85e05f4584bdaeded7222ffa
       Path: Events\Default Work Unit\VO\VO_NPC_Locked
-      maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxAttenuation: 70
+      maxDuration: 0
+      minDuration: 0
     - name: VO_NPC_Surprised
       guid: fc46c3fd640be14989d052b23909c023
       id: 3660578466
@@ -1741,8 +1741,8 @@ MonoBehaviour:
         guid: fc46c3fd640be14989d052b23909c023
       Path: Events\Default Work Unit\VO\VO_NPC_Surprised
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0.73529166
+      minDuration: 0.5330833
     - name: VO_NPC_Whatever
       guid: 52eeab4b04035a45930a3319bc98aa4f
       id: 3470322369
@@ -1760,9 +1760,9 @@ MonoBehaviour:
         ObjectType: 3
         guid: 52eeab4b04035a45930a3319bc98aa4f
       Path: Events\Default Work Unit\VO\VO_NPC_Whatever
-      maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxAttenuation: 70
+      maxDuration: 1.0723125
+      minDuration: 0.55147916
     - name: VO_Player_Barks
       guid: d5cca68b5d9ae34eb9171cde9fcb3d5e
       id: 2054537116
@@ -1781,8 +1781,8 @@ MonoBehaviour:
         guid: d5cca68b5d9ae34eb9171cde9fcb3d5e
       Path: Events\Default Work Unit\VO\VO_Player_Barks
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 0
+      minDuration: 0
     - name: VO_Player_Yay
       guid: ee2e19c5bea37d4094e95b5812dd16f4
       id: 2458294146
@@ -1801,8 +1801,8 @@ MonoBehaviour:
         guid: ee2e19c5bea37d4094e95b5812dd16f4
       Path: Events\Default Work Unit\VO\VO_Player_Yay
       maxAttenuation: 0
-      maxDuration: -1
-      minDuration: -1
+      maxDuration: 3.0380309
+      minDuration: 1.7692022
   RtpcWwu:
   - PhysicalPath: Game Parameters\Default Work Unit.wwu
     PathAndIcons:
@@ -1815,7 +1815,7 @@ MonoBehaviour:
     ParentPath: Game Parameters\Default Work Unit
     guid: 183607395b7abe48a4667fda80dcb427
     GuidInternal: 
-    m_lastTime: -8584560855359886519
+    m_lastTime: -8584535054671913096
     List:
     - name: NPC_Speed
       guid: b8a1d5b47c093543b7df40722b45bcb7
@@ -1885,7 +1885,7 @@ MonoBehaviour:
     ParentPath: States\Default Work Unit
     guid: af7cbd3a91f8fa45b4608609763cdabc
     GuidInternal: 
-    m_lastTime: -8584563580434242726
+    m_lastTime: -8584535054638066338
     List:
     - name: Music
       guid: ab59f37bea0fea4bbae3157f03df8dbc
@@ -1997,7 +1997,7 @@ MonoBehaviour:
     ParentPath: Switches\Default Work Unit
     guid: 3bd6a9a5898ac445b699c94c0ef17091
     GuidInternal: 
-    m_lastTime: -8584563030206761392
+    m_lastTime: -8584535054638051309
     List:
     - name: Material
       guid: e3d291f643829b4cbd2cc7810fdd08d2
@@ -2193,7 +2193,7 @@ MonoBehaviour:
     ParentPath: Triggers\Default Work Unit
     guid: e57c667935e38a43bc482598b93d66b4
     GuidInternal: 
-    m_lastTime: -8584578913928872863
+    m_lastTime: -8584535054638051309
     List: []
   ExpandedFileSystemItemIds: 
   ExpandedWaapiItemIds: 05000000060000000700000008000000090000000a0000000b0000000e0000000f000000120000001400000015000000180000001a0000001b0000001c0000002400000026000000280000002c0000002e00000032000000340000003f000000450000004a0000004b000000

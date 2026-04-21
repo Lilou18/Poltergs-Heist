@@ -7,49 +7,75 @@ using System.Collections;
 
 public class InventoryUI : MonoBehaviour
 {
-    public static InventoryUI Instance {  get; private set; }
+    // Manages the inventory HUD.
+    // - Stealable bar: shows a silhouette for each stealable item in the scene,
+    //   the sprite is filled when the player picks it up
+    // - Collected item bar: shows icons for key items the player is currently carrying,
+    //   hidden automatically when empty
 
-    [SerializeField] private GameObject collectedItemBar;
-    [SerializeField] private GameObject keyUIPrefab;
-    [SerializeField] private GameObject stealableBar;
+    [SerializeField] private GameObject collectedItemBar;       // Parent container for collected key item icons
+    [SerializeField] private GameObject keyUIPrefab;            // Prefab used to display a collected key item icon
+    [SerializeField] private GameObject stealableBar;           // Parent container for stealable item silhouettes
 
-    List<StealableBehavior> stealableItemList = new List<StealableBehavior>();  // List of every stealable items in the scene
-    Dictionary<Sprite, GameObject> stealableUI = new Dictionary<Sprite, GameObject>();  // Each treasure has it's own sprite
-    Dictionary<KeyItemBehavior, GameObject> keyUI = new Dictionary<KeyItemBehavior, GameObject>();
+    // Maps each stealable sprite to its UI image.
+    // Note: if two different stealable objects share the same sprite, only the first
+    // one will be represented in the UI. This is intentional for deduplication.
+    // There is never two identical stealable in the same level.
+    Dictionary<Sprite, GameObject> stealableUI = new Dictionary<Sprite, GameObject>();
 
-    private void Awake()
-    {
-        if(Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(Instance);
-        }
+    // All stealable items in the scene, sorted by name for consistent display order
+    List<PickupItemBehavior> stealableItemList = new List<PickupItemBehavior>();
 
-        stealableItemList = FindObjectsByType<StealableBehavior>(FindObjectsSortMode.InstanceID).OrderBy(obj => obj.name).ToList<StealableBehavior>();
-    }
+    // Maps each key item to its instantiated UI icon
+    Dictionary<PickupItemBehavior, GameObject> keyUI = new Dictionary<PickupItemBehavior, GameObject>();
+
+    private InventorySystem inventorySystem;                    // Player inventory
 
     private void Start()
     {
         SetupStealableBarUI();
+        // Hide the collected item bar if there are no key items on startup
         collectedItemBar.SetActive(collectedItemBar.transform.childCount > 0);
     }
 
+    private void OnEnable()
+    {
+        // Register to inventory changes event.
+        InventorySystem.Instance.OnInventoryChanged += HandleInventoryChanged;
+    }
+    
+    private void OnDisable()
+    {
+        // Unregister to inventory changes event.
+        if (inventorySystem != null)
+        {
+            inventorySystem.OnInventoryChanged -= HandleInventoryChanged;
+        }
+    }
+
+    // Creates a black silhouette image in the stealable bar for each stealable item.
+    // There is never two identical stealable in the same level.
     private void SetupStealableBarUI()
     {
-        if(stealableItemList.Count == 0)
+        // List of all stealable item in the level
+        // Sort by name for consistent left-to-right display order in the stealable bar
+        stealableItemList = FindObjectsByType<PickupItemBehavior>(FindObjectsSortMode.InstanceID)
+            .Where(i => i.ItemType == PickupItemType.Stealable)
+            .OrderBy(i => i.name)
+            .ToList();
+
+        if (stealableItemList.Count == 0)
         {
             Debug.LogWarning("Stealable list is empty");
         }
-        foreach(StealableBehavior stealableItem in stealableItemList)
+
+        foreach (PickupItemBehavior stealableItem in stealableItemList)
         {
             Sprite sprite = stealableItem.ItemSpriteRenderer.sprite;
 
             if (!stealableUI.ContainsKey(sprite))
             {
-                // Add to the inventory the shadow of the picture to find
+                // Create a black silhouette that is filled when the item is picked up
                 GameObject obj = new GameObject("StealableObj");
                 obj.AddComponent<Image>();
                 Image objectImage = obj.GetComponent<Image>();
@@ -60,14 +86,27 @@ public class InventoryUI : MonoBehaviour
 
                 stealableUI[sprite] = obj;
             }
-            
-
-            //stealableUI[stealableItem] = obj;
         }
     }
 
-    // Update the stealable bar UI when an item is stolen or when we reset
-    public void UpdateStealableBarUI(StealableBehavior itemStolen, bool isPickedUp)
+    // Update the inventory UI bar based on the type of the item picked up.
+    private void HandleInventoryChanged(PickupItemBehavior item, bool isPickedUp)
+    {
+        switch (item.ItemType)
+        {
+            case PickupItemType.Stealable:
+                UpdateStealableBarUI(item, isPickedUp);
+                break;
+
+            case PickupItemType.Key:
+                UpdateCollectedItemBarUI(item, isPickedUp);
+                break;
+        }
+    }
+
+    // Updates the stealable bar icon for the given item.
+    // Filled when picked up, black when reset.
+    private void UpdateStealableBarUI(PickupItemBehavior itemStolen, bool isPickedUp)
     {
         Sprite sprite = itemStolen.ItemSpriteRenderer.sprite;
         if (stealableUI.ContainsKey(sprite))
@@ -77,11 +116,13 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    public void UpdateCollectedItemBarUI(KeyItemBehavior keyitem, bool isPickedUp)
+    // Adds or removes a key item icon from the collected item bar.
+    // The bar is shown or hidden automatically after the change.
+    private void UpdateCollectedItemBarUI(PickupItemBehavior keyitem, bool isPickedUp)
     {
-        // Add key to inventory
         if (isPickedUp)
         {
+            // Instantiate a new icon for the collected key item
             GameObject newKeyImage = Instantiate(keyUIPrefab, collectedItemBar.transform);
             Image collectedItemImage = newKeyImage.GetComponent<Image>();
             collectedItemImage.sprite = keyitem.ItemSpriteRenderer.sprite;
@@ -96,17 +137,17 @@ public class InventoryUI : MonoBehaviour
             {
                 Destroy(keyUI[keyitem]);
                 keyUI.Remove(keyitem);
-            }           
+            }
         }
+        // Wait one frame for Destroy to take effect before checking child count
         StartCoroutine(CheckCollectedItemBarEmpty());
-        
-       
     }
 
-    // Check if the collected bar tiem is empty, if yes we desactivate it
+    // Waits one frame then shows or hides the collected item bar based on whether it has children.
+    // The one frame delay is necessary because Destroy is deferred until end of frame.
     private IEnumerator CheckCollectedItemBarEmpty()
     {
-        yield return null;  // Wait for one frame
+        yield return null;
         // Verify is the collected item bar still has some image
         collectedItemBar.SetActive(collectedItemBar.transform.childCount > 0);
     }

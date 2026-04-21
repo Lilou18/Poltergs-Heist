@@ -5,26 +5,28 @@ using UnityEngine;
 
 public class KeyItemBehavior : PickupItemBehavior, IResetInitialState
 {
-    // This class manage the behavior of the key that can be collected by the player
+    // Extends PickupItemBehavior for key items that unlock a linked door.
+    // Unlocks the door on pickup and re locks it on reset.
 
-    [SerializeField] private AK.Wwise.Event keyPickUpSound;
+    [SerializeField] private LockedObject linkedDoor;   // The door unlocked when this key is picked up
 
-    protected override void OnTriggerEnter2D(Collider2D collision)
+    // Hides the key and unlocks the linked door.
+    protected override void OnPickedUp()
     {
-        base.OnTriggerEnter2D(collision);
-        PossessionManager possessionManager = collision.GetComponent<PossessionManager>();
-        if (collision.GetComponent<PlayerController>() != null || (possessionManager != null && possessionManager.IsPossessing))
+        base.OnPickedUp();
+        if(linkedDoor != null)
         {
-            InventorySystem.Instance.AddKeyToInventory(this);
-            keyPickUpSound.Post(gameObject);
-        }
+            linkedDoor.Unlock();
+        }        
     }
 
-    // Reset key item to it's inital state
+    // Restores the key's visual state and re locks the linked door.
     public override void ResetInitialState()
     {
         base.ResetInitialState();
-        InventorySystem.Instance.NotifyKeyReset(this);
+        if(linkedDoor != null)
+        {
+            linkedDoor.Lock();
+        }
     }
-
 }

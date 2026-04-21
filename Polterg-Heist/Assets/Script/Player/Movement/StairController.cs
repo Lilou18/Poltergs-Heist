@@ -138,7 +138,7 @@ public class StairController : MonoBehaviour
         PossessionManager possessManage = character.GetComponent<PossessionManager>();
         if(possessManage != null)
         {
-            if (possessManage.isAttacked)
+            if (possessManage.IsAttacked)
             {
                 if (possessionController != null)
                 {

@@ -97,6 +97,9 @@ GameObject:
   - component: {fileID: 6776522598510484148}
   - component: {fileID: 3444647450879541081}
   - component: {fileID: 4046844470576449417}
+  - component: {fileID: 3562090099510799262}
+  - component: {fileID: 2565616701244703830}
+  - component: {fileID: 5661706347926381055}
   - component: {fileID: 2375456114127631376}
   m_Layer: 6
   m_Name: NPC
@@ -216,33 +219,16 @@ MonoBehaviour:
   ignoreLayerSightBlocked:
     serializedVersion: 2
     m_Bits: 3308872
-  nonSuspiciousColorFOV: {r: 0, g: 1, b: 0.101960786, a: 1}
-  alertColorFOV: {r: 1, g: 0.015686275, b: 0, a: 1}
   currentFloorLevel: 0
-  alertSpriteRenderer: {fileID: 3588996521330335409}
-  alertIcon: {fileID: 21300000, guid: 0f2a294604cb26142a964f4745c1af41, type: 3}
   surpriseSoundEvent:
     idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: 560026148bb62064cbcaeeb11db3d8b1, type: 2}
-  nonSuspiciousSoundEvent:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: f2457f34ad53fc04b8c6e53df05f8be9, type: 2}
-  soundCooldown: 1.5
-  curiousNPCSoundEvent:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: 94cb05dd257f19b49a715c153ecf9705, type: 2}
   minSuspiciousRotation: 20
   minSuspiciousPosition: 1
   mirrorLayer:
     serializedVersion: 2
     m_Bits: 1024
-  surpriseWaitTime: 2
-  investigationWaitTime: 3
-  investigationIcon: {fileID: 21300000, guid: 65770edc1ca5be2499feb7db7c35ce62, type: 3}
-  hasActiveInvestigation: 0
   audioSource: {fileID: 0}
   detectionRadiusLight: 20
   lightLayer:
@@ -290,6 +276,62 @@ MonoBehaviour:
   isMarble: 0
   movementSpeed: 6
   blindSpeed: 3
+--- !u!114 &3562090099510799262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 96332612726348765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6ae9f412cab2d34395fbb84c4d10745, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surpriseWaitTime: 2
+  investigationWaitTime: 3
+--- !u!114 &2565616701244703830
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 96332612726348765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1690a1691745bc4aba61bbc4c39c079, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  surpriseSoundEvent:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 11400000, guid: 560026148bb62064cbcaeeb11db3d8b1, type: 2}
+  curiousSoundEvent:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 11400000, guid: 94cb05dd257f19b49a715c153ecf9705, type: 2}
+  nonSuspiciousSoundEvent:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 11400000, guid: f2457f34ad53fc04b8c6e53df05f8be9, type: 2}
+  surpriseCooldown: 1.5
+--- !u!114 &5661706347926381055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 96332612726348765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e1517edf1ab5df4d93219005c97a8fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  iconRenderer: {fileID: 3588996521330335409}
+  investigationIcon: {fileID: 21300000, guid: 65770edc1ca5be2499feb7db7c35ce62, type: 3}
+  alertIcon: {fileID: 21300000, guid: 0f2a294604cb26142a964f4745c1af41, type: 3}
+  nonSuspiciousColorFOV: {r: 0, g: 1, b: 0.101960786, a: 1}
+  alertColorFOV: {r: 1, g: 0.015686275, b: 0, a: 1}
 --- !u!82 &2375456114127631376
 AudioSource:
   m_ObjectHideFlags: 0

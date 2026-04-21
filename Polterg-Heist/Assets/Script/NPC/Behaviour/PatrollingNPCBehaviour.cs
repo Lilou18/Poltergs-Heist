@@ -4,283 +4,225 @@ using Unity.VisualScripting;
 using UnityEngine;
 using System.Drawing;
 
+// Interface for NPC who are patrolling
 public interface IPatrol
 {
     IEnumerator Patrol();
     void MoveToNextAvailablePatrolPoint();
 }
+public enum PatrollingNPCState
+{
+    Idle,                   // NPC is available to patrol
+    Patrolling,             // NPC is walking to the next patrol point
+    WaitingAtPoint,         // NPC has reached a patrol point and is waiting
+    InRoom,                 // NPC is inside a room
+    Blocked,                // NPC is blocked by a possessed object at a room entrance
+    Investigating,          // NPC is investigating a sound or event
+    Returning               // NPC is returning to its initial position after investigation
+}
+
+[RequireComponent(typeof(PatrollingNPCInvestigationController))]
 public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialState
 {
+    // Extends HumanNPCBehaviour for patrolling NPCs.
+    // Handles:
+    // - Patrolling between patrol points
+    // - Room entry and exit with door animations
+    // - Blocked state when a possessed object blocks a room entrance
+    // - Getting unstuck when the blocking object is removed
+
+
     [Header("Patrolling NPC Sound Variables")]
-    [SerializeField] protected AK.Wwise.Event npcLockedSoundEvent;
-    [SerializeField] protected AK.Wwise.Event doorOpenSoundEvent;
-    [SerializeField] protected AK.Wwise.Event doorCloseSoundEvent;
-    // Enemy patrol variables
+    [SerializeField] protected AK.Wwise.Event npcLockedSoundEvent;  // Played when the NPC is blocked at a room entrance
+    [SerializeField] protected AK.Wwise.Event doorOpenSoundEvent;   // Played when the NPC opens a door
+    [SerializeField] protected AK.Wwise.Event doorCloseSoundEvent;  // Played when the NPC closes a door
+
     [Header("Patrol variables")]
-    [SerializeField] protected PatrolPointData[] patrolPoints;    // Points were the NPC patrol
-    protected int indexPatrolPoints;    // Next index patrol point    
-    protected Animator animator;
-    protected bool isBlocked;   // Is the NPC blocked in a room
-    protected bool isWaiting;   // We wait for the animation to finish
-    protected bool isInRoom;    // Is the NPC in a room
-    PatrolPointData currentPoint;   // Point where the NPC is located
-    PatrolPointData nextPatrolPoint; // Next NPC patrol point
-    private PatrolPointData initialPatrolPoint;
-    //private bool rightFloor;    // Does the NPC on the right floor to do is patrol
-    //private bool isWalkingBack;    // Does the NPC go up the stairs
-    private bool isPatrolling;
+    [SerializeField] protected PatrolPointData[] patrolPoints;      // list of patrol destinations
+    protected int indexPatrolPoints;                                // Index of the next patrol point to visit
+    private Coroutine patrolCoroutine;                              // Currently running patrol coroutine
+    PatrolPointData currentPoint;                                   // Patrol point the NPC is currently at
+    PatrolPointData nextPatrolPoint;                                // Next patrol point the NPC will move to
+    private PatrolPointData initialPatrolPoint;                     // First patrol point
+
+    protected Animator animator;                                    // Controls room entry/exit animations
+    
+    // Getters
+    public bool IsBlocked => CurrentState == PatrollingNPCState.Blocked;
+    public bool IsInRoom => CurrentState == PatrollingNPCState.InRoom;
+    public bool IsUnavailable => CurrentState == PatrollingNPCState.Blocked
+                              || CurrentState == PatrollingNPCState.InRoom;
+
+    // Getter and Setter
+    public PatrollingNPCState CurrentState { get; set; } = PatrollingNPCState.Idle;
 
 
-    // Public properties to access from other scripts
-    public bool IsBlocked => isBlocked;
-    public bool IsInRoom => isInRoom;
-
-    private Coroutine returnToFloor;
-    private Coroutine patrolling;
     protected override void Start()
     {
         base.Start();
         indexPatrolPoints = 0;
         animator = GetComponentInChildren<Animator>();
-        //if(animator != null)
-        //{
-        //    print("Nom de l'animator" + animator.gameObject.name);
-        //}
-        isBlocked = false;
-        isWaiting = false;
-        isInRoom = false;
-        //rightFloor = true;
-        //isWalkingBack = false;
-        isPatrolling = false;   
         currentPoint = null;
-        if(patrolPoints.Length > 0)
+
+        // Can't play non suspicious sound if the NPC is blocked
+        soundController.AddNonSuspiciousSoundConditions(() => !IsBlocked);
+
+        if (patrolPoints.Length > 0)
         {
             nextPatrolPoint = patrolPoints[indexPatrolPoints];
             initialPatrolPoint = nextPatrolPoint;
         }
-        
     }
     protected override void Update()
     {
-        if(npcSpriteRenderer == null)
-        {
-            print("WTF");
-        }
+        base.Update();
 
-        UpdateIconDisplay();
-
-        DetectMovingObjects();
-
-        //if (hasSeenMovement && alertSpriteRenderer != null)
-        //{
-        //    if (SuspicionManager.Instance.HasSuspicionDecrease)
-        //    {
-        //        alertSpriteRenderer.enabled = false;
-        //        print("already here");
-        //    }
-
-        //    if (SuspicionManager.Instance.CurrentSuspicion <= 0)
-        //    {
-        //        hasSeenMovement = false;
-        //    }
-
-        //}
-        //if (hasSeenMovement && alertIcon != null)
-        //{
-        //    // Keep alert icon visible while suspicion exists, hide it when suspicion is gone
-        //    if (SuspicionManager.Instance.CurrentSuspicion > 0)
-        //    {
-        //        alertIcon.enabled = true;
-        //    }
-        //    else
-        //    {
-        //        alertIcon.enabled = false;
-        //        hasSeenMovement = false; // Reset the flag when suspicion is gone
-        //    }
-        //}
-
-        CheckMirrorReflection();
-
-
-        // Priority 1: If the NPC is blocked but the room is no longer blocked, get unstuck
-        if(isBlocked && currentPoint != null && !IsRoomBlocked(currentPoint))
+        // Priority 1: if blocked but the room is no longer blocked by a possessed object, get unstuck
+        if (CurrentState == PatrollingNPCState.Blocked
+            && currentPoint != null
+            && !IsRoomBlocked(currentPoint))
         {
             npcLockedSoundEvent.Stop(gameObject);
-            StopNonSuspiciousSound();
             StartCoroutine(GetUnstuck());
             return;
         }
-        // Priority 2: Handle investigation queue if we're not currently investigating or getting unstuck
-        if(investigationQueue.Count > 0 && !isInvestigating && !isWaiting)
+
+        // Priority 2: start patrolling if idle and no investigation is pending
+        if (CurrentState == PatrollingNPCState.Idle
+            && investigationController.QueueCount == 0
+            && !investigationController.IsInvestigating)
         {
-            StopNonSuspiciousSound();
-            if (returnToFloor != null)
-            {
-                StopCoroutine(returnToFloor);
-                returnToFloor = null;
-            }
-            isInvestigating = true;
-            //StopCoroutine("HandleWaiting");
-            //StopCoroutine("Patrol");
-            if(patrolling != null)
-            {
-                StopCoroutine(patrolling);
-            }
-            
-            isPatrolling = false;
-            IEnumerator investigationCoroutine = investigationQueue.Dequeue();
-            StartCoroutine(RunInvestigation(investigationCoroutine));
-        }
-        // Priority 3: Return to starting floor if we need to
-        //else if(investigationQueue.Count == 0 && !isInvestigating && !rightFloor && isWalkingBack)
-        //{
-        //    isWalkingBack = false;
-        //    returnToFloor = StartCoroutine(ReturnRightFloor());
-        //}
-        // Priority 4: Patrol if we're able to and should be
-        else if(investigationQueue.Count == 0 && !isInvestigating && !isWaiting && !isBlocked && !isPatrolling)
-        {
-            //nonSuspiciousSoundEvent.Post(gameObject);
-            patrolling = StartCoroutine(Patrol());
-        }
-
-
-        // Handle ambient sound for patrolling NPCs
-        //bool shouldPlayAmbientSound = CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying && nonSuspiciousSoundCoroutine == null;
-        bool shouldStopAmbientSound = (!CanPlayNonSuspiciousSound() || isInvestigating || investigationQueue.Count > 0) && isNonSuspiciousSoundPlaying;
-
-        // Stop the sound if conditions require it
-        if (shouldStopAmbientSound)
-        {
-            StopNonSuspiciousSound();
-        }
-        // Start the sound if conditions allow it and we're not already playing/about to play
-        //else if (shouldPlayAmbientSound)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-
-    }
-
-    protected override void UpdateIconDisplay()
-    {
-        if(isBlocked || isInRoom)
-        {
-            if(alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.enabled = false;
-            }
-            return;
-        }
-
-        base.UpdateIconDisplay();
-    }
-
-    // Override to add patrolling-specific conditions
-    protected override bool CanPlayNonSuspiciousSound()
-    {
-        bool baseConditions =  base.CanPlayNonSuspiciousSound();
-
-        return baseConditions && !isBlocked; // !isWaiting && !isInRoom
-    }
-
-    protected override IEnumerator RunInvestigation(IEnumerator investigation)
-    {
-        StopNonSuspiciousSound();
-        // Wait until we're not blocked, not in a room, and not getting unstuck
-        while (isBlocked || isInRoom || isWaiting)
-        {
-            yield return new WaitForSeconds(0.5f);
-        }
-        //isWalkingBack = true;
-        //rightFloor = false;
-        print(investigation.ToString());
-        yield return StartCoroutine(investigation);
-        isInvestigating = false;
-
-        // If there is no more investigation we disable the icons
-        if (investigationQueue.Count == 0 && !hasSeenMovement)
-        {
-            hasActiveInvestigation = false;
-
-            if (alertSpriteRenderer != null)
-            {
-                alertSpriteRenderer.enabled = false;
-                fovLight.color = nonSuspiciousColorFOV;
-            }
-        }
-
-        lastSuspiciousTime = Time.time;
-
-        if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        {
-            StartNonSuspiciousSound();
+            patrolCoroutine = StartCoroutine(Patrol());
         }
     }
 
-    // Start the investigation of the sound
-    //public override void InvestigateSound(SoundDetection objectsound, bool replaceObject, float targetFloor)
-    //{
-    //    investigationQueue.Enqueue(InvestigateFallingObject(objectsound, replaceObject, targetFloor));      
-    //}
-
-    public IEnumerator ReturnRightFloor()
-    {
-        yield return StartCoroutine(npcMovementController.ReachFloor(currentFloorLevel, initialFloorLevel));//ReachFloor(initialFloorLevel));
-        if (FloorLevel == initialFloorLevel)
-        {
-            //rightFloor = true;
-        }
-
-    }
-
+    // Moves the NPC to the next patrol point, then handles waiting behavior at that point.
     public IEnumerator Patrol()
     {
-        if (patrolPoints.Length == 0 || nextPatrolPoint == null) yield break;   // If there is no patrolPoint
-        isPatrolling = true;
-        // Get movement direction
-        Vector2 destination = new Vector2(nextPatrolPoint.Point.position.x, transform.position.y);
+        if (patrolPoints.Length == 0 || nextPatrolPoint == null) yield break;
 
+        CurrentState = PatrollingNPCState.Patrolling;
         currentPoint = null;
-        //print("CURRENTFLOOR" + currentFloorLevel);
-        //print("NEXTPOINT " + nextPatrolPoint.FloorLevel);
+
+        // Move to the patrol point
+        Vector2 destination = new Vector2(nextPatrolPoint.Point.position.x, transform.position.y);
         yield return npcMovementController.ReachTarget(destination, currentFloorLevel, nextPatrolPoint.FloorLevel);
 
-        // NPC has arrived to the patrol point
+        // Wait at the point
         currentPoint = nextPatrolPoint;
         yield return HandleWaiting(currentPoint);
     }
 
-    // Check if there is a possessed object in front of a room
+    // Stops the current patrol coroutine and halts NPC movement.
+    // Called before starting an investigation.
+    public void StopPatrolling()
+    {
+        if (patrolCoroutine != null)
+        {
+            StopCoroutine(patrolCoroutine);
+            patrolCoroutine = null;
+        }
+        npcMovementController.StopMovement();
+    }
+
+    // Handles NPC behavior when arriving at a patrol point.
+    // - Room points: enter, wait, exit OR enter blocked state if entrance is blocked
+    // - Regular points: wait then continue
+    protected IEnumerator HandleWaiting(PatrolPointData point)
+    {
+        CurrentState = PatrollingNPCState.WaitingAtPoint;
+
+        if (point.PatrolPointType == PatrolPointType.Room)
+        {
+            // The Room is not blocked so the NPC Enter the room
+            if (!IsInRoom && !IsRoomBlocked(point))
+            {
+                // The NPC can no longer detect anything while in the Room
+                canSee = false;
+                fovLight.enabled = false;
+
+                doorOpenSoundEvent.Post(gameObject);
+                animator.SetBool("EnterRoom", true);
+
+                CurrentState = PatrollingNPCState.InRoom;
+                yield return new WaitForSeconds(0.5f);
+                doorCloseSoundEvent.Post(gameObject);
+                yield return new WaitForSeconds(point.WaitTime);
+
+                // If the Room is not blocked after the wait time
+                if (!IsRoomBlocked(point))
+                {
+                    // Exit the room normally
+                    doorOpenSoundEvent.Post(gameObject);
+                    animator.SetTrigger("ExitRoom");
+                    yield return new WaitForSeconds(0.5f);
+                    doorCloseSoundEvent.Post(gameObject);
+
+                    // The NPC can detect again
+                    canSee = true;
+                    fovLight.enabled = true;
+                    animator.SetBool("EnterRoom", false);
+                    CurrentState = PatrollingNPCState.Idle;
+                }
+                else
+                {
+                    // The NPC got blocked while inside the Room. Play locked sound and wait
+                    npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
+                    CurrentState = PatrollingNPCState.Blocked;
+                    yield break;
+                }
+            }
+            // Entrance is blocked before entering. Wait briefly then continue
+            else if (!IsInRoom && IsRoomBlocked(point))
+            {
+                yield return new WaitForSeconds(point.WaitTimeBlocked);
+                CurrentState = PatrollingNPCState.Idle;
+            }
+            // The NPC got blocked while inside the Room. Play locked sound and wait
+            else if (IsInRoom && IsRoomBlocked(point))
+            {
+                npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
+                CurrentState = PatrollingNPCState.Blocked;
+                yield break;
+            }
+        }
+        else
+        {
+            // Regular patrol point. Wait then continue
+            yield return new WaitForSeconds(point.WaitTime);
+            CurrentState = PatrollingNPCState.Idle;
+        }
+
+        MoveToNextAvailablePatrolPoint();
+    }
+
+    // Returns true if a possessed object is blocking enough of the room entrance
+    // to prevent the NPC from entering.
+    // Blocking is calculated as the percentage of entrance width covered by objects.
     protected bool IsRoomBlocked(PatrolPointData point)
     {
+        // Only patrolPoint type of Room can be blocked
         if (point.PatrolPointType != PatrolPointType.Room || point.SpriteRenderer == null) return false;
 
-
-        // Get the room sprite bounds
+        // Get the room sprite bounds, width and height
         Bounds roomBounds = point.SpriteRenderer.bounds;
-
-        // Get the sprite width and height
         float roomWidth = roomBounds.size.x;
         float roomHeight = roomBounds.size.y;
 
-        // Get object colliders in front of the room
+        // Get object colliders in front of the Room
         Collider2D[] colliders = Physics2D.OverlapBoxAll(point.SpriteRenderer.transform.position,
                                                         new Vector2(roomWidth,roomHeight),
                                                         0f, detectObjectLayer
                                                         );
 
         float blockedWidth = 0f;
-
         foreach (Collider2D collider in colliders)
         {
-            // Skip if the object is not tall enough
+            // Skip objects that are not tall enough to block the entrance
             if (collider.bounds.size.y < point.MinimumBlockHeight)          
                 continue;
-            
-                
 
-            // Calculate how much width of the room is the object taking
+            // Calculate the overlapping width between the object and the room entrance
             float objectWidth = Mathf.Min(collider.bounds.max.x, roomBounds.max.x)
                                 - Mathf.Max(collider.bounds.min.x, roomBounds.min.x);
             if(objectWidth > 0)
@@ -295,189 +237,77 @@ public class PatrollingNPCBehaviour : HumanNPCBehaviour, IPatrol, IResetInitialS
         return blockPercentage >= point.BlockingThreshold;
     }
 
-    public void MoveToNextAvailablePatrolPoint()
-    {
-        int patrolPointPossibilities = patrolPoints.Length;
-        //bool findNextPoint = false;
-        indexPatrolPoints++;
-        if (indexPatrolPoints >= patrolPoints.Length)
-        {
-            indexPatrolPoints = 0;
-        }
-        nextPatrolPoint = patrolPoints[indexPatrolPoints];
-    }
-
-    protected IEnumerator HandleWaiting(PatrolPointData currentPoint)
-    {
-        isWaiting = true;
-        if (currentPoint.PatrolPointType == PatrolPointType.Room)
-        {
-            // Case 1: NPC is not in a room and the room is not blocked
-            if(!isInRoom && !IsRoomBlocked(currentPoint))
-            {
-                
-                canSee = false;
-                fovLight.enabled = false;
-                doorOpenSoundEvent.Post(gameObject);
-                animator.SetBool("EnterRoom", true);
-                isInRoom = true;
-                yield return new WaitForSeconds(0.5f);
-                doorCloseSoundEvent.Post(gameObject);
-                yield return new WaitForSeconds(currentPoint.WaitTime); // Waiting in the room
-
-                // Check again if the room became blocked while waiting
-                if (!IsRoomBlocked(currentPoint))
-                {
-                    doorOpenSoundEvent.Post(gameObject);
-                    animator.SetTrigger("ExitRoom");
-                    yield return new WaitForSeconds(0.5f);
-                    doorCloseSoundEvent.Post(gameObject);
-                    isInRoom = false;
-                    canSee = true;
-                    fovLight.enabled = true;
-                    animator.SetBool("EnterRoom", false);
-                }
-                else
-                {
-                    // The NPC is stuck
-                    StopNonSuspiciousSound();
-                    uint playingID = npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
-                    //Animator roomAnimator = currentPoint.GetComponent<Animator>();
-                    //if(roomAnimator != null)
-                    //{
-                    //    roomAnimator.SetBool("IsNPCBlocked", true);
-                    //}
-                    isWaiting = false;
-                    isBlocked = true;
-                    yield break;
-                }
-            }
-            // Case 2: The NPC is not in a room and the room is blocked
-            else if(!isInRoom && IsRoomBlocked(currentPoint))
-            {
-                yield return new WaitForSeconds(currentPoint.WaitTimeBlocked);
-            }
-            // Case 3: NPC is in a room and the room is blocked
-            else if(isInRoom && IsRoomBlocked(currentPoint))
-            {
-                StopNonSuspiciousSound();
-                uint playingID = npcLockedSoundEvent.Post(gameObject, (uint)AkCallbackType.AK_Marker, MarkerCallback);
-                //Animator roomAnimator = currentPoint.GetComponent<Animator>();
-                //if (roomAnimator != null)
-                //{
-                //    roomAnimator.SetBool("IsNPCBlocked", true);
-                //}
-                // The NPC is stuck
-                isWaiting = false;
-                isBlocked = true;
-                yield break;
-            }
-        }
-        else
-        {
-            //isWaiting = false;
-            yield return new WaitForSeconds(currentPoint.WaitTime);
-        }
-        isWaiting = false;
-        isPatrolling = false;
-
-        //if (CanPlayNonSuspiciousSound() && !isNonSuspiciousSoundPlaying)
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-        MoveToNextAvailablePatrolPoint();
-    }
-
+    // Wwise marker callback triggered during the locked sound event.
+    // Fires the NPCBlocked animation trigger on the room animator.
     private void MarkerCallback(object in_cookie, AkCallbackType in_type, AkCallbackInfo in_info)
     {
         if (in_type == AkCallbackType.AK_Marker)
         {
             AkMarkerCallbackInfo markerInfo = (AkMarkerCallbackInfo)in_info;
-            //Debug.Log("Marker Triggered: " + markerInfo.strLabel);
 
-            // Ici tu déclenches ton animation
             Animator roomAnimator = currentPoint.GetComponent<Animator>();
             if (roomAnimator != null)
             {
                 roomAnimator.SetTrigger("NPCBlocked");
-                
+
             }
         }
     }
 
-
-    // NPC is not blocked anymore
+    // Called when the blocking object has been removed.
+    // Plays the exit room animation and restores normal patrol state.
     protected IEnumerator GetUnstuck()
     {
-        //isGettingUnstuck = true;
         // Animation of NPC coming out of the room
-        isWaiting = true;
-        isBlocked = false;
-
-        StopNonSuspiciousSound();
+        CurrentState = PatrollingNPCState.WaitingAtPoint;
 
         animator.SetTrigger("ExitRoom");
         yield return new WaitForSeconds(0.5f);
         canSee = true;
         fovLight.enabled = true;
         animator.SetBool("EnterRoom", false);
-        isWaiting = false;
-        //print("ISWAITING2 " + isWaiting); 
-        isInRoom = false;
-        isPatrolling = false;
+        CurrentState = PatrollingNPCState.Idle;
 
-        if (CanPlayNonSuspiciousSound()) //&& !isNonSuspiciousSoundPlaying)
-        {
-            StartNonSuspiciousSound();
-        }
+        soundController.TryPlayNonSuspiciousSound();
         // After getting unstuck, move to the next patrol point
-        //isGettingUnstuck = false;
         MoveToNextAvailablePatrolPoint();
+    }
+
+    // Advances to the next patrol point in the list
+    public void MoveToNextAvailablePatrolPoint()
+    {
+        int patrolPointPossibilities = patrolPoints.Length;
+
+        indexPatrolPoints++;
+        if (indexPatrolPoints >= patrolPoints.Length)
+        {
+            indexPatrolPoints = 0;
+        }
+        nextPatrolPoint = patrolPoints[indexPatrolPoints];
+    }   
+
+    // Hides the icon when the NPC is unavailable (inside a room or blocked)
+    protected override IconState GetIconState()
+    {
+        if (IsUnavailable) return IconState.None;
+        return base.GetIconState();
     }
 
     public override void ResetInitialState()
     {
         base.ResetInitialState();
         animator.Rebind();      
-        fovLight.enabled = true;
-        isWaiting = false;
-        isInRoom = false;
-        isPatrolling = false;
-        isBlocked = false;
+        fovLight.enabled = true;        
         canSee = true;
         currentPoint = null;
-        returnToFloor = null;
-        patrolling = null;
+        patrolCoroutine = null;
         indexPatrolPoints = 0;
+        CurrentState = PatrollingNPCState.Idle;
 
-        // Reset the ambient sound after resetting other state
-        StopNonSuspiciousSound();
-        lastSuspiciousTime = -nonSuspiciousSoundCooldown;
-        isNonSuspiciousSoundPlaying = false;
         if (initialPatrolPoint != null)
         {
             nextPatrolPoint = initialPatrolPoint;
         }
         npcLockedSoundEvent.Stop(gameObject);
-
-        fovLight.color = nonSuspiciousColorFOV;
-        // Stop room animation
-        //foreach(PatrolPointData patrolPoint in patrolPoints)
-        //{
-        //    if (patrolPoint.PatrolPointType == PatrolPointType.Room && patrolPoint.SpriteRenderer != null)
-        //    {
-        //        Animator roomAnimator = currentPoint.GetComponent<Animator>();
-        //        if (roomAnimator != null)
-        //        {
-        //            roomAnimator.SetBool("IsNPCBlocked", false);
-        //        }
-        //    }
-        //}
-
-        //if (CanPlayNonSuspiciousSound())
-        //{
-        //    StartNonSuspiciousSound();
-        //}
-        //cageAnimator.Play("Idle", -1, 0f);
     }
 }

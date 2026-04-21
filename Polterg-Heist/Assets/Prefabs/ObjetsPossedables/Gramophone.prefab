@@ -127,7 +127,7 @@ GameObject:
   - component: {fileID: 2454090806262149162}
   - component: {fileID: 340694066106455347}
   m_Layer: 8
-  m_Name: JukeBox
+  m_Name: Gramophone
   m_TagString: Possess
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

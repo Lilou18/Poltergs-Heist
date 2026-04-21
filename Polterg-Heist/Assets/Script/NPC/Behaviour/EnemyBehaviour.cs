@@ -4,6 +4,10 @@ using UnityEngine.TextCore.Text;
 
 public class EnemyBehaviour : MonoBehaviour
 {
+    // LEGACY CODE NO LONGER USED!!!!
+ 
+
+
     // Enemy vision variables
     protected float fieldOfViewAngle;
     [SerializeField]  protected float detectionRadius;  // NPC detection radius

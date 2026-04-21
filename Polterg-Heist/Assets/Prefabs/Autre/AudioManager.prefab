@@ -107,3 +107,6 @@ MonoBehaviour:
     idInternal: 0
     valueGuidInternal: 
     WwiseObjectReference: {fileID: 11400000, guid: 658349f36f3d6cf4199151069de1bc12, type: 2}
+  menuScenes: []
+  houseScenes: []
+  museumScenes: []
